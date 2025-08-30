@@ -1,12 +1,19 @@
-import { Component, signal } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { Component, Inject, signal } from '@angular/core';
+import { Router, RouterLink, RouterOutlet } from '@angular/router';
+import { AUTH_SERVICE } from './shared/tokens/di-tokens';
+import { AuthService } from './features/auth/application/auth.service';
 
 @Component({
+  standalone: true,
   selector: 'app-root',
-  imports: [RouterOutlet],
   templateUrl: './app.html',
-  styleUrl: './app.css'
+  styleUrls: ['./app.css'],
+  imports: [RouterOutlet]
 })
 export class App {
-  protected readonly title = signal('fronted-rrhh');
+  constructor(@Inject(AUTH_SERVICE) public auth: AuthService, private router: Router){}
+  logout(){
+    this.auth.logout();
+    this.router.navigateByUrl('/login')
+  }
 }

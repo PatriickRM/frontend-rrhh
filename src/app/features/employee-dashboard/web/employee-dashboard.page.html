@@ -1,0 +1,183 @@
+<!-- src/app/features/employee-dashboard/presentation/employee-dashboard.page.html -->
+
+<div class="dashboard-container">
+
+  <!-- Error State -->
+  <div *ngIf="error && !loading" class="error-container">
+    <div class="error-message">
+      <i class="error-icon">⚠️</i>
+      <p>{{ error }}</p>
+      <button (click)="loadDashboard()" class="retry-btn">Reintentar</button>
+    </div>
+  </div> 
+
+  <!-- Dashboard Content -->
+  <div *ngIf="!loading && !error && dashboardData" class="dashboard-content">
+    
+    <!-- Header Section -->
+    <div class="dashboard-header">
+      <div class="employee-info">
+        <div class="avatar">{{ getEmployeeInitials(employee?.fullName || '') }}</div>
+        <div class="employee-details">
+          <h1>{{ employee?.fullName }}</h1>
+          <p class="employee-position">{{ employee?.positionTitle }} - {{ employee?.departmentName }}</p>
+          <span class="employee-status" [class]="getStatusClass(employee?.status || '')">
+            {{ employee?.status }}
+          </span>
+        </div>
+      </div>
+      <div class="dashboard-actions">
+        <button (click)="loadDashboard()" class="refresh-btn">Actualizar</button>
+      </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="stats-grid">
+      <!-- Vacation Balance Card -->
+      <div class="stat-card vacation-card">
+        <div class="card-header">
+          <h3>Balance de Vacaciones</h3>
+        </div>
+        <div class="card-content" *ngIf="leaveBalance">
+          <div class="vacation-numbers">
+            <div class="vacation-stat">
+              <span class="number">{{ leaveBalance.remainingVacationDays }}</span>
+              <span class="label">Días Restantes</span>
+            </div>
+            <div class="vacation-stat">
+              <span class="number">{{ leaveBalance.usedVacationDays }}</span>
+              <span class="label">Días Usados</span>
+            </div>
+            <div class="vacation-stat">
+              <span class="number">{{ leaveBalance.totalVacationDays }}</span>
+              <span class="label">Días Totales</span>
+            </div>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" [style.width.%]="getVacationProgressPercentage()"></div>
+          </div>
+          <p class="progress-text">{{ getVacationProgressPercentage() | number:'1.0-0' }}% utilizado</p>
+        </div>
+      </div>
+
+      <!-- Requests Stats Card -->
+      <div class="stat-card requests-card">
+        <div class="card-header">
+          <h3>Solicitudes del Año</h3>
+        </div>
+        <div class="card-content" *ngIf="stats">
+          <div class="requests-grid">
+            <div class="request-stat total">
+              <span class="number">{{ stats.totalRequests }}</span>
+              <span class="label">Total</span>
+            </div>
+            <div class="request-stat approved">
+              <span class="number">{{ stats.approvedRequests }}</span>
+              <span class="label">Aprobadas</span>
+            </div>
+            <div class="request-stat pending">
+              <span class="number">{{ stats.pendingRequests }}</span>
+              <span class="label">Pendientes</span>
+            </div>
+            <div class="request-stat rejected">
+              <span class="number">{{ stats.rejectedRequests }}</span>
+              <span class="label">Rechazadas</span>
+            </div>
+          </div>
+          <div class="approval-rate">
+            <p>Tasa de aprobación: {{ getApprovalRate() | number:'1.0-0' }}%</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Response Time Card -->
+      <div class="stat-card response-card">
+        <div class="card-header">
+          <h3>Tiempo de Respuesta</h3>
+        </div>
+        <div class="card-content" *ngIf="stats">
+          <div class="response-time">
+            <span class="number">{{ stats.averageResponseDays | number:'1.0-1' }}</span>
+            <span class="unit">días promedio</span>
+          </div>
+          <p class="response-description">Tiempo promedio de respuesta a sus solicitudes</p>
+        </div>
+      </div>
+
+      <!-- Employee Details Card -->
+      <div class="stat-card details-card">
+        <div class="card-header">
+          <h3>Información Personal</h3>
+          <div class="card-icon">👤</div>
+        </div>
+        <div class="card-content" *ngIf="employee">
+          <div class="employee-details-grid">
+            <div class="detail-item">
+              <span class="detail-label">Email:</span>
+              <span class="detail-value">{{ employee.email }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Teléfono:</span>
+              <span class="detail-value">{{ employee.phone }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Fecha de Ingreso:</span>
+              <span class="detail-value">{{ employee.hireDate | date:'dd/MM/yyyy' }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">DNI:</span>
+              <span class="detail-value">{{ employee.dni }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Charts Section -->
+    <div class="charts-section" *ngIf="stats">
+      
+      <!-- Monthly Requests Chart -->
+      <div class="chart-card" *ngIf="stats.requestsByMonth.length > 0">
+        <div class="chart-header">
+          <h3>Solicitudes por Mes</h3>
+        </div>
+        <div class="chart-content">
+          <div class="monthly-chart">
+            <div *ngFor="let monthStat of stats.requestsByMonth" class="month-bar">
+              <div class="bar" [style.height.%]="(monthStat.count / 10) * 100"></div>
+              <span class="month-label">{{ monthStat.month }}</span>
+              <span class="month-count">{{ monthStat.count }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Request Types Chart -->
+      <div class="chart-card" *ngIf="stats.requestsByType.length > 0">
+        <div class="chart-header">
+          <h3>Tipos de Solicitudes</h3>
+        </div>
+        <div class="chart-content">
+          <div class="types-list">
+            <div *ngFor="let typeStat of stats.requestsByType" class="type-item">
+              <div class="type-info">
+                <span class="type-name">{{ typeStat.type }}</span>
+                <span class="type-count">{{ typeStat.count }} ({{ typeStat.percentage }}%)</span>
+              </div>
+              <div class="type-bar">
+                <div class="type-fill" [style.width.%]="typeStat.percentage"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Empty State for Stats -->
+    <div *ngIf="stats?.totalRequests === 0" class="empty-state">
+      <div class="empty-icon">📊</div>
+      <h3>No hay solicitudes este año</h3>
+      <p>Cuando realice solicitudes de permisos, aparecerán estadísticas aquí.</p>
+    </div>
+  </div>
+</div>

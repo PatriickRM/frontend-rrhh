@@ -1,0 +1,37 @@
+<div class="container">
+  <app-sidebar></app-sidebar>
+
+  <div class="main-content">
+    <div class="top">
+      <div class="nav">
+        <!-- Botón abrir sidebar (solo móviles) -->
+        <button id="menu-btn">
+          <span class="material-icons-sharp">menu</span>
+        </button>
+
+        <div class="dark-mode" (click)="toggleDarkMode()">
+          <span class="material-icons-sharp active">light_mode</span>
+          <span class="material-icons-sharp">dark_mode</span>
+        </div>
+
+        <div class="profile">
+          <div class="info">
+             <p>Bienvenido, <b>{{ auth.getUser()?.usuario || 'Invitado' }}</b></p>
+            <small class="text-muted">{{ auth.getUser()?.rol || 'No identificado' }}</small>
+          </div>
+          <div class="profile-photo">
+            <img src="/profile-1.jpg" alt="profile">
+          </div>
+          <div class="profile-dropdown">
+            <a href="#">Mi perfil</a>
+            <a (click)="logout()" href="#">Cerrar Sesión</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <main>
+      <router-outlet></router-outlet>
+    </main>
+  </div>
+</div>

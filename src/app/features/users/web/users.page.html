@@ -1,0 +1,100 @@
+<div>
+  <h1>Gestión de Usuarios</h1>
+
+  <p *ngIf="error" class="danger">{{ error }}</p>
+
+  <section *ngIf="!loading && !error" class="data-table-section">
+    <div class="table-header">
+      <button class="btn-primary" (click)="abrirFormulario('Agregar')">
+        <span class="material-icons-sharp">add</span>
+        Agregar Usuario
+      </button>
+    </div>
+
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Usuario</th>
+            <th>Nombre Completo</th>
+            <th>Roles</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let user of users; index as i">
+            <td>{{ i + 1 }}</td>
+            <td>{{ user.userName }}</td>
+            <td>{{ user.fullName }}</td>
+            <td>{{ getRolesString(user.roles) }}</td>
+            <td class="actions">
+              <button class="btn-icon view" title="Ver" (click)="abrirDetalles(user)">
+                <span class="material-icons-sharp">visibility</span>
+              </button>
+              <button class="btn-icon edit" title="Editar" (click)="abrirFormulario('Editar', user)">
+                <span class="material-icons-sharp">edit</span>
+              </button>
+              <button class="btn-icon delete" title="Eliminar" (click)="abrirConfirmacion(user)">
+                <span class="material-icons-sharp">delete</span>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Modal Formulario -->
+  <div class="modal" *ngIf="showFormModal">
+    <div class="modal-content">
+      <h2>{{ formMode }} Usuario</h2>
+      <form (submit)="handleGuardar($event)">
+        <label>Usuario:</label>
+        <input type="text" name="username" [value]="selectedUser?.userName || ''" required />
+
+        <label>Nombre Completo:</label>
+        <input type="text" name="fullName" [value]="selectedUser?.fullName || ''" required />
+
+        <label *ngIf="formMode === 'Agregar'">Contraseña:</label>
+        <input *ngIf="formMode === 'Agregar'" type="password" name="password" required />
+
+        <label>Rol:</label>
+        <select name="roleId" [value]="selectedUser?.roles?.[0] || ''" required>
+          <option *ngFor="let role of roles" [value]="role.id">{{ role.name }}</option>
+        </select>
+
+        <div class="modal-actions">
+          <button type="submit" class="btn-primary">Guardar</button>
+          <button type="button" class="btn-secondary" (click)="cerrarModal()">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Confirmación -->
+  <div class="modal" *ngIf="showConfirmModal">
+    <div class="modal-content">
+      <h2>¿Confirmar eliminación?</h2>
+      <p>Esta acción no se puede deshacer.</p>
+      <div class="modal-actions">
+        <button class="btn-danger" (click)="handleEliminar()">Eliminar</button>
+        <button class="btn-secondary" (click)="cerrarModal()">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Detalles -->
+  <div class="modal" *ngIf="showDetailsModal">
+    <div class="modal-content">
+      <h2>Detalles del Usuario</h2>
+      <p><strong>Usuario:</strong> {{ selectedUser?.userName }}</p>
+      <p><strong>Nombre Completo:</strong> {{ selectedUser?.fullName }}</p>
+      <p><strong>Roles:</strong> {{ getRolesString(selectedUser?.roles || []) }}</p>
+      <p><strong>Estado:</strong> {{ selectedUser?.enabled ? 'Activo' : 'Inactivo' }}</p>
+      <div class="modal-actions">
+        <button class="btn-secondary" (click)="cerrarModal()">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>

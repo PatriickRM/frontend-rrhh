@@ -1,0 +1,107 @@
+<div>
+  <h1>Gestión de Posiciones</h1>
+
+  <p *ngIf="error" class="danger">{{ error }}</p>
+
+  <section *ngIf="!loading && !error" class="data-table-section">
+    <div class="table-header">
+      <button class="btn-primary" (click)="abrirFormulario('Agregar')">
+        <span class="material-icons-sharp">add</span>
+        Agregar Posición
+      </button>
+
+      <button class="btn-primary" (click)="toggleFiltro()">
+        <span class="material-icons-sharp">
+          {{ mostrarSoloDeshabilitados ? 'visibility' : 'visibility_off' }}
+        </span>
+        {{ mostrarSoloDeshabilitados ? 'Ver Habilitadas' : 'Ver Deshabilitadas' }}
+      </button>
+
+      <button class="btn-primary" (click)="exportarPDF()">
+        <span class="material-icons-sharp">picture_as_pdf</span>
+        Exportar a PDF
+      </button>
+    </div>
+
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Título</th>
+            <th>Salario Base</th>
+            <th>Departamento</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let position of posiciones; index as i">
+            <td>{{ position.title }}</td>
+            <td>{{ position.baseSalary | currency }}</td>
+            <td>{{ getDepartmentName(position.departmentId) }}</td>
+            <td class="actions">
+              <button class="btn-icon view" title="Ver" (click)="abrirDetalles(position)">
+                <span class="material-icons-sharp">visibility</span>
+              </button>
+              <button class="btn-icon edit" title="Editar" (click)="abrirFormulario('Editar', position)">
+                <span class="material-icons-sharp">edit</span>
+              </button>
+              <button class="btn-icon delete" title="Eliminar" (click)="abrirConfirmacion(position)">
+                <span class="material-icons-sharp">delete</span>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Modal Formulario -->
+  <div class="modal" *ngIf="showFormModal">
+    <div class="modal-content">
+      <h2>{{ formMode }} Posición</h2>
+      <form (submit)="handleGuardar($event)">
+        <label>Título:</label>
+        <input type="text" name="title" [value]="selectedPosition?.title || ''" required />
+
+        <label>Salario Base:</label>
+        <input type="number" name="baseSalary" [value]="selectedPosition?.baseSalary || ''" required />
+
+        <label>Departamento:</label>
+        <select name="departmentId" [value]="selectedPosition?.departmentId || ''" required>
+          <option *ngFor="let dept of departamentos" [value]="dept.id">{{ dept.name }}</option>
+        </select>
+
+        <div class="modal-actions">
+          <button type="submit" class="btn-primary">Guardar</button>
+          <button type="button" class="btn-secondary" (click)="cerrarModal()">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Confirmación -->
+  <div class="modal" *ngIf="showConfirmModal">
+    <div class="modal-content">
+      <h2>¿Confirmar deshabilitación?</h2>
+      <p>Esta acción se puede deshacer.</p>
+      <div class="modal-actions">
+        <button class="btn-danger" (click)="handleEliminar()">Deshabilitar</button>
+        <button class="btn-secondary" (click)="cerrarModal()">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Detalles -->
+  <div class="modal" *ngIf="showDetailsModal">
+    <div class="modal-content">
+      <h2>Detalles de la Posición</h2>
+      <p><strong>Título:</strong> {{ selectedPosition?.title }}</p>
+      <p><strong>Salario Base:</strong> {{ selectedPosition?.baseSalary | currency }}</p>
+      <p><strong>Departamento:</strong> {{ getDepartmentName(selectedPosition?.departmentId) }}</p>
+      <p><strong>Estado:</strong> {{ selectedPosition?.enabled ? 'Habilitada' : 'Deshabilitada' }}</p>
+      <div class="modal-actions">
+        <button class="btn-secondary" (click)="cerrarModal()">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>

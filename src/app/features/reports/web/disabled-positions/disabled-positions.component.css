@@ -1,0 +1,68 @@
+/* Contenedor principal */
+.disabled-positions-container {
+  padding: 20px;
+  font-family: Arial, sans-serif;
+}
+
+/* Tabla estilizada */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 15px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+th, td {
+  padding: 12px 15px;
+  border: 1px solid #ddd;
+  text-align: left;
+}
+
+th {
+  background-color: #007bff;
+  color: white;
+  font-weight: 600;
+}
+
+tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+
+/* Celda de estado inactiva */
+td.inactive {
+  background-color: #ffcccc; /* rojo claro */
+  color: #900; /* rojo oscuro */
+  font-weight: bold;
+  text-align: center;
+}
+
+/* Encabezado */
+h2 {
+  margin-bottom: 10px;
+  color: #333;
+}
+
+/* Mensajes de error o carga */
+p.error {
+  color: red;
+  font-weight: bold;
+}
+
+p.loading {
+  color: #555;
+  font-style: italic;
+}
+
+.btn-export {
+  margin-bottom: 10px;
+  padding: 8px 15px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.btn-export:hover {
+  background-color: #0056b3;
+}

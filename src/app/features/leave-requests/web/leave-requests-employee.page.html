@@ -1,0 +1,511 @@
+<div>
+  <h1>Mi Balance de Vacaciones</h1>
+
+  <p *ngIf="error" class="danger">{{ error }}</p>
+
+  <!-- Balance Card -->
+  <div class="balance-card" *ngIf="balance">
+    <div class="balance-header">
+      <h2>Balance de Vacaciones</h2>
+      <span class="years-badge">{{ balance.yearsOfService }} años de servicio</span>
+    </div>
+    <div class="balance-stats">
+      <div class="stat-item">
+        <span class="stat-number">{{ balance.maxVacationDays }}</span>
+        <span class="stat-label">Días Totales</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-number used">{{ balance.usedVacationDays }}</span>
+        <span class="stat-label">Días Usados</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-number available">{{ balance.availableVacationDays }}</span>
+        <span class="stat-label">Días Disponibles</span>
+      </div>
+    </div>
+  </div>
+
+  <section *ngIf="!loading && !error" class="data-table-section">
+    <!-- Barra de herramientas -->
+    <div class="toolbar">
+      <div class="toolbar-title">
+        <h2>Mis Solicitudes</h2>
+      </div>
+      
+      <div class="action-buttons">
+        <button class="btn-primary" (click)="abrirFormulario()">
+          <span class="material-icons-sharp">add</span>
+          Nueva Solicitud
+        </button>
+      </div>
+    </div>
+
+    <!-- Grid de tarjetas de solicitudes -->
+    <div class="requests-grid">
+      <div class="request-card" *ngFor="let request of requests" 
+           [class]="'card-' + request.status.toLowerCase().replace('_', '-')">
+        
+        <div class="card-header">
+          <div class="request-type">
+            <span class="type-icon material-icons-sharp">
+              {{ getTypeIcon(request.type) }}
+            </span>
+            <div class="type-info">
+              <h3>{{ getTypeDisplayName(request.type) }}</h3>
+              <div class="request-id">ID: {{ request.id }}</div>
+            </div>
+          </div>
+          <div class="status-container">
+            <span class="status-badge" [class]="getStatusClass(request.status)">
+              {{ getStatusDisplayName(request.status) }}
+            </span>
+          </div>
+        </div>
+        
+        <div class="card-body">
+          <div class="date-range">
+            <div class="date-item">
+              <span class="material-icons-sharp">event_available</span>
+              <span>{{ request.startDate | date:'dd/MM/yyyy' }}</span>
+            </div>
+            <div class="date-separator">-></div>
+            <div class="date-item">
+              <span class="material-icons-sharp">event</span>
+              <span>{{ request.endDate | date:'dd/MM/yyyy' }}</span>
+            </div>
+          </div>
+          
+          <div class="days-count">
+            <span class="days-number">{{ calculateDays(request.startDate, request.endDate) }}</span>
+            <span class="days-label">días</span>
+          </div>
+          
+          <div class="justification">
+            <strong>Justificación:</strong>
+            <p>{{ request.justification }}</p>
+          </div>
+        </div>
+
+        <div class="card-actions">
+          <button class="btn-icon view" title="Ver Detalles" (click)="abrirDetalles(request)">
+            <span class="material-icons-sharp" style="color: black;">visibility</span>
+          </button>
+        </div>
+      </div>
+
+
+  <!-- Modal Formulario Nueva Solicitud -->
+  <div class="modal" *ngIf="showFormModal">
+    <div class="modal-content large-modal">
+      <h2>Nueva Solicitud de Permiso</h2>
+      <form (submit)="handleCrear($event)">
+        
+        <div class="form-section">
+          <h3>Datos del Permiso</h3>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label>Tipo de Permiso:</label>
+              <select name="type" required>
+                <option value="">Seleccione un tipo</option>
+                <option value="VACACIONES">Vacaciones</option>
+                <option value="ENFERMEDAD">Enfermedad</option>
+                <option value="CITA_MEDICA">Cita Médica</option>
+                <option value="FALLECIMIENTO_FAMILIAR">Fallecimiento Familiar</option>
+                <option value="MATRIMONIO">Matrimonio</option>
+                <option value="MUDANZA">Mudanza</option>
+            </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Fecha de Inicio:</label>
+              <input
+                type="date"
+                name="startDate"
+                required
+              />
+            </div>
+            <div class="form-group">
+              <label>Fecha de Fin:</label>
+              <input
+                type="date"
+                name="endDate"
+                required
+              />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Justificación:</label>
+            <textarea
+              name="justification"
+              rows="4"
+              placeholder="Describe el motivo de tu solicitud..."
+              required
+            ></textarea>
+          </div>
+
+          <div class="form-group">
+            <label>Evidencia:</label>
+            <input
+              type="file"
+              accept="image/*,.pdf"
+              (change)="onFileSelected($event)"
+              class="file-input"
+            />
+            <small>Formatos permitidos: imágenes y PDF</small>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="submit" class="btn-primary">Enviar Solicitud</button>
+          <button type="button" class="btn-secondary" (click)="cerrarModal()">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Detalles -->
+  <div class="modal" *ngIf="showDetailsModal">
+    <div class="modal-content large-modal">
+      <h2>Detalles de la Solicitud</h2>
+      <div class="details-container">
+        
+        <!-- Información General -->
+        <div class="details-section">
+          <h3>Información General</h3>
+          <div class="details-grid">
+            <div class="detail-item">
+              <strong>ID:</strong> {{ selectedRequest?.id }}
+            </div>
+            <div class="detail-item">
+              <strong>Tipo:</strong> {{ getTypeDisplayName(selectedRequest?.type!) }}
+            </div>
+            <div class="detail-item">
+              <strong>Estado:</strong> 
+              <span class="status-badge" [class]="getStatusClass(selectedRequest?.status!)">
+                {{ getStatusDisplayName(selectedRequest?.status!) }}
+              </span>
+            </div>
+            <div class="detail-item">
+              <strong>Fecha de Solicitud:</strong> {{ selectedRequest?.requestDate | date:'dd/MM/yyyy HH:mm' }}
+            </div>
+            <div class="detail-item">
+              <strong>Fecha de Inicio:</strong> {{ selectedRequest?.startDate | date:'dd/MM/yyyy' }}
+            </div>
+            <div class="detail-item">
+              <strong>Fecha de Fin:</strong> {{ selectedRequest?.endDate | date:'dd/MM/yyyy' }}
+            </div>
+            <div class="detail-item full-width">
+              <strong>Justificación:</strong> {{ selectedRequest?.justification }}
+            </div>
+          </div>
+        </div>
+
+        <!-- Comentarios del Jefe -->
+        <div class="details-section" *ngIf="selectedRequest?.headComment || selectedRequest?.reviewedByHeadName">
+          <h3>Respuesta del Jefe</h3>
+          <div class="details-grid">
+            <div class="detail-item" *ngIf="selectedRequest?.reviewedByHeadName">
+              <strong>Revisado por:</strong> {{ selectedRequest?.reviewedByHeadName }}
+            </div>
+            <div class="detail-item" *ngIf="selectedRequest?.headResponseDate">
+              <strong>Fecha de Respuesta:</strong> {{ selectedRequest?.headResponseDate | date:'dd/MM/yyyy HH:mm' }}
+            </div>
+            <div class="detail-item full-width" *ngIf="selectedRequest?.headComment">
+              <strong>Comentarios:</strong> {{ selectedRequest?.headComment }}
+            </div>
+          </div>
+        </div>
+
+        <!-- Comentarios de RRHH -->
+        <div class="details-section" *ngIf="selectedRequest?.hrComment">
+          <h3>Respuesta de RRHH</h3>
+          <div class="details-grid">
+            <div class="detail-item" *ngIf="selectedRequest?.hrResponseDate">
+              <strong>Fecha de Respuesta:</strong> {{ selectedRequest?.hrResponseDate | date:'dd/MM/yyyy HH:mm' }}
+            </div>
+            <div class="detail-item full-width">
+              <strong>Comentarios:</strong> {{ selectedRequest?.hrComment }}
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="modal-actions">
+        <button class="btn-secondary" (click)="cerrarModal()">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+/* Balance Card Styles */
+/* Balance Card */
+.balance-card {
+  background: darkgreen;
+  color: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.2);
+}
+
+.balance-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.balance-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 1rem;
+}
+
+.stat-item {
+  text-align: center;
+  background: rgba(255,255,255,0.1);
+  padding: 0.8rem;
+  border-radius: 8px;
+}
+
+.stat-number {
+  display: block;
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin-bottom: 0.3rem;
+}
+
+
+/* Toolbar */
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: white;
+  padding: 1rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  margin-bottom: 1rem;
+}
+
+.btn-primary {
+  background: #007bff;
+  color: white;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-secondary {
+  background: #6c757d;
+  color: white;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+/* Requests Grid */
+.requests-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 1rem;
+}
+
+.request-card {
+  background: white;
+  border-radius: 8px;
+  padding: 1rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  border-left: 3px solid #007bff;
+}
+
+.card-aprobado { border-left-color: #28a745; }
+.card-pendiente-jefe { border-left-color: #ffc107; }
+.card-pendiente-rrhh { border-left-color: #17a2b8; }
+.card-rechazado { border-left-color: #dc3545; }
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.8rem;
+}
+
+.request-type {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.type-icon {
+  background: #f8f9fa;
+  padding: 0.3rem;
+  border-radius: 50%;
+  font-size: 1.2rem;
+}
+
+.date-range {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  background: #f8f9fa;
+  padding: 0.5rem;
+  border-radius: 6px;
+  margin-bottom: 0.8rem;
+}
+
+.date-item {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.9rem;
+}
+
+.days-count {
+  text-align: center;
+  margin-bottom: 0.8rem;
+}
+
+.days-number {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #007bff;
+}
+
+.justification {
+  background: #f8f9fa;
+  padding: 0.8rem;
+  border-radius: 6px;
+  margin-bottom: 0.8rem;
+}
+
+.justification p {
+  margin: 0.3rem 0 0 0;
+  font-size: 0.9rem;
+  color: #555;
+}
+
+.card-actions {
+  text-align: right;
+  padding-top: 0.5rem;
+  border-top: 1px solid #e9ecef;
+}
+
+.btn-icon {
+  background: #17a2b8;
+  color: white;
+  border: none;
+  padding: 0.4rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+/* Status Badges */
+.status-badge {
+  padding: 0.3rem 0.6rem;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.status-pending-head { background: #fff3cd; color: #856404; }
+.status-pending-hr { background: #d1ecf1; color: #0c5460; }
+.status-approved { background: #d4edda; color: #155724; }
+.status-rejected { background: #f8d7da; color: #721c24; }
+
+/* Modal */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 8px;
+  max-width: 600px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.large-modal {
+  max-width: 700px;
+}
+
+/* Form */
+.form-section {
+  padding: 1rem;
+  border: 1px solid #e9ecef;
+  border-radius: 6px;
+  background: #f8f9fa;
+  margin-bottom: 1rem;
+}
+
+.form-row {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 0.8rem;
+}
+
+.form-group {
+  flex: 1;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.3rem;
+  font-weight: 500;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.modal-actions {
+  text-align: center;
+  margin-top: 1rem;
+}
+
+/* No requests */
+.no-requests {
+  text-align: center;
+  padding: 2rem;
+  color: #6c757d;
+}
+
+.no-requests .material-icons-sharp {
+  font-size: 3rem;
+  margin-bottom: 0.5rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .requests-grid { grid-template-columns: 1fr; }
+  .form-row { flex-direction: column; }
+  .toolbar { flex-direction: column; gap: 0.5rem; }
+}
+</style>

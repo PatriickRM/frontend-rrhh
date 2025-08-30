@@ -1,0 +1,26 @@
+<div class="disabled-positions-container">
+  <h2>Posiciones Deshabilitadas</h2>
+
+  <button class="btn-export" (click)="exportToPDF()">Exportar a PDF</button>
+
+  <table>
+    <thead>
+      <tr>
+        
+        <th>Título</th>
+        <th>Salario Base</th>
+        <th>Departamento</th>
+        <th>Estado</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let pos of positions; index as i">
+        
+        <td>{{ pos.title }}</td>
+        <td>{{ pos.baseSalary | currency }}</td>
+        <td>{{ getDepartmentName(pos.departmentId) }}</td>
+        <td [class.inactive]="!pos.enabled">{{ pos.enabled ? 'Activo' : 'Inactivo' }}</td>
+      </tr>
+    </tbody>
+  </table>
+</div>

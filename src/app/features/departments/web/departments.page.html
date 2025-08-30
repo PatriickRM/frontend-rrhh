@@ -1,0 +1,116 @@
+<div>
+  <h1>Gestión de Departamentos</h1>
+
+  <p *ngIf="error" class="danger">{{ error }}</p>
+
+  <section *ngIf="!loading && !error" class="data-table-section">
+    <div class="table-header">
+      <button class="btn-primary" (click)="abrirFormulario('Agregar')">
+        <span class="material-icons-sharp">add</span>
+        Agregar Departamento
+      </button>
+
+      <button class="btn-primary" (click)="toggleFiltro()">
+        <span class="material-icons-sharp">
+          {{ mostrarSoloDeshabilitados ? 'visibility' : 'visibility_off' }}
+        </span>
+        {{ mostrarSoloDeshabilitados ? 'Ver Habilitados' : 'Ver Deshabilitados' }}
+      </button>
+
+      <!-- Nuevo botón de exportar PDF -->
+      <button class="btn-primary" (click)="exportarPDF()">
+        <span class="material-icons-sharp">picture_as_pdf</span>
+        Exportar a PDF
+      </button>
+    </div>
+
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Código</th>
+            <th>Nombre</th>
+            <th>Jefe de Dep.</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let departamento of departamentos; index as i">
+            <td>{{ departamento.code }}</td>
+            <td>{{ departamento.name }}</td>
+            <td>{{ departamento.head?.fullName || 'Sin Asignar' }}</td>
+            <td class="actions">
+              <button class="btn-icon view" title="Ver" (click)="abrirDetalles(departamento)">
+                <span class="material-icons-sharp">visibility</span>
+              </button>
+              <button class="btn-icon edit" title="Editar" (click)="abrirFormulario('Editar', departamento)">
+                <span class="material-icons-sharp">edit</span>
+              </button>
+              <button class="btn-icon delete" title="Eliminar" (click)="abrirConfirmacion(departamento)">
+                <span class="material-icons-sharp">person_remove</span>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Modal Formulario -->
+  <div class="modal" *ngIf="showFormModal">
+    <div class="modal-content">
+      <h2>{{ formMode }} Departamento</h2>
+      <form (submit)="handleGuardar($event)">
+        <label>Código:</label>
+        <input
+          type="text"
+          name="codigo"
+          [value]="selectedDepartamento?.code || ''"
+          required
+        />
+        <label>Nombre:</label>
+        <input
+          type="text"
+          name="nombre"
+          [value]="selectedDepartamento?.name || ''"
+          required
+        />
+        <label>Descripción:</label>
+        <textarea
+          name="descripcion"
+          [value]="selectedDepartamento?.description || ''"
+          rows="3"
+        ></textarea>
+        <div class="modal-actions">
+          <button type="submit" class="btn-primary">Guardar</button>
+          <button type="button" class="btn-secondary" (click)="cerrarModal()">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Confirmación -->
+  <div class="modal" *ngIf="showConfirmModal">
+    <div class="modal-content">
+      <h2>¿Confirmar deshabilitación?</h2>
+      <p>Esta acción se puede deshacer.</p>
+      <div class="modal-actions">
+        <button class="btn-danger" (click)="handleEliminar()">Deshabilitar</button>
+        <button class="btn-secondary" (click)="cerrarModal()">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Detalles -->
+  <div class="modal" *ngIf="showDetailsModal">
+    <div class="modal-content">
+      <h2>Detalles del Departamento</h2>
+      <p><strong>Código:</strong> {{ selectedDepartamento?.code }}</p>
+      <p><strong>Nombre:</strong> {{ selectedDepartamento?.name }}</p>
+      <p><strong>Descripción:</strong> {{ selectedDepartamento?.description }}</p>
+      <div class="modal-actions">
+        <button class="btn-secondary" (click)="cerrarModal()">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>

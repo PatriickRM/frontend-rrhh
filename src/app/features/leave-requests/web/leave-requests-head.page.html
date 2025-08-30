@@ -1,0 +1,358 @@
+<!-- head-leave-requests.page.html -->
+<div class="head-container">
+  <div class="page-header">
+    <h1>
+      <span class="material-icons-sharp">supervisor_account</span>
+      Gestión de Solicitudes de Permisos
+    </h1>
+    <p class="header-subtitle">Administra las solicitudes de tu equipo</p>
+  </div>
+
+  <p *ngIf="error" class="danger">{{ error }}</p>
+
+  <!-- Barra de herramientas y filtros -->
+  <div class="toolbar-section" *ngIf="!loading && !error">
+    <div class="toolbar">
+      <div class="view-toggles">
+        <button 
+          class="btn-toggle" 
+          [class.active]="currentFilter === 'pending'"
+          (click)="loadPendingRequests()">
+          <span class="material-icons-sharp">pending</span>
+          Pendientes
+        </button>
+        <button 
+          class="btn-toggle" 
+          [class.active]="currentFilter === 'all'"
+          (click)="loadAllRequests()">
+          <span class="material-icons-sharp">list</span>
+          Todas
+        </button>
+      </div>
+      
+      <div class="filters">
+        <select class="filter-select" [(ngModel)]="selectedStatus" (ngModelChange)="onStatusFilterChange()">
+          <option value="all">Todos los estados</option>
+          <option value="PENDIENTE_JEFE">Pendiente Jefe</option>
+          <option value="PENDIENTE_RRHH">Pendiente RRHH</option>
+          <option value="APROBADO">Aprobado</option>
+          <option value="RECHAZADO">Rechazado</option>
+        </select>
+        
+        <select class="filter-select" [(ngModel)]="selectedType" (ngModelChange)="onTypeFilterChange()">
+          <option value="all">Todos los tipos</option>
+          <option value="VACACIONES">Vacaciones</option>
+          <option value="ENFERMEDAD">Enfermedad</option>
+          <option value="CITA_MEDICA">Cita Médica</option>
+          <option value="FALLECIMIENTO_FAMILIAR">Fallecimiento Familiar</option>
+          <option value="MATRIMONIO">Matrimonio</option>
+          <option value="MUDANZA">Mudanza</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Contador de resultados -->
+    <div class="results-counter">
+      <span>{{ filteredRequests.length }} solicitud(es) encontrada(s)</span>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="loading" class="loading-container">
+    <div class="spinner"></div>
+    <p>Cargando solicitudes...</p>
+  </div>
+
+  <!-- Grid de solicitudes -->
+  <section *ngIf="!loading && !error" class="requests-section">
+    <div class="requests-grid">
+      <div class="request-card head-card" 
+           *ngFor="let request of filteredRequests" 
+           [class]="'card-' + request.status.toLowerCase().replace('_', '-')"
+           [class.urgent]="getUrgencyClass(request) === 'urgent'"
+           [class.soon]="getUrgencyClass(request) === 'soon'">
+        
+        <div class="card-header">
+          <div class="employee-info">
+            <div class="employee-avatar">
+              <span class="material-icons-sharp">person</span>
+            </div>
+            <div class="employee-details">
+              <h3>{{ request.employeeName }}</h3>
+              <span class="department">{{ request.employeeDepartment }}</span>
+            </div>
+          </div>
+          
+          <div class="request-meta">
+            <div class="status-container">
+              <span class="status-badge" [class]="getStatusClass(request.status)">
+                {{ getStatusDisplayName(request.status) }}
+              </span>
+            </div>
+            <div class="request-id">ID: {{ request.id }}</div>
+          </div>
+        </div>
+        
+        <div class="card-body">
+          <div class="request-type-section">
+            <span class="type-icon material-icons-sharp">
+              {{ getTypeIcon(request.type) }}
+            </span>
+            <span class="type-name">{{ getTypeDisplayName(request.type) }}</span>
+          </div>
+          
+          <div class="date-range">
+            <div class="date-item">
+              <span class="material-icons-sharp">event_available</span>
+              <span>{{ request.startDate | date:'dd/MM/yyyy' }}</span>
+            </div>
+            <div class="date-separator">→</div>
+            <div class="date-item">
+              <span class="material-icons-sharp">event</span>
+              <span>{{ request.endDate | date:'dd/MM/yyyy' }}</span>
+            </div>
+          </div>
+          
+          <div class="duration-info">
+            <span class="days-count">
+              <strong>{{ calculateDays(request.startDate, request.endDate) }}</strong> 
+              día(s)
+            </span>
+            <span class="request-date">
+              Solicitado: {{ request.requestDate | date:'dd/MM/yyyy' }}
+            </span>
+          </div>
+          
+          <div class="justification-preview">
+            <strong>Justificación:</strong>
+            <p>{{ request.justification.length > 100 ? (request.justification.substring(0, 100) + '...') : request.justification }}</p>
+          </div>
+
+          <!-- Indicador de urgencia -->
+          <div class="urgency-indicator" *ngIf="getUrgencyClass(request) !== 'normal'">
+            <span class="material-icons-sharp">
+              {{ getUrgencyClass(request) === 'urgent' ? 'warning' : 'schedule' }}
+            </span>
+            <span>
+              {{ getUrgencyClass(request) === 'urgent' ? 'Solicitud urgente' : 'Inicia pronto' }}
+            </span>
+          </div>
+        </div>
+
+        <div class="card-actions">
+          <button class="btn-icon view" title="Ver Detalles" (click)="abrirDetalles(request)">
+            <span class="material-icons-sharp">visibility</span>
+          </button>
+          
+          <button 
+            class="btn-icon respond" 
+            title="Responder" 
+            *ngIf="canRespond(request)"
+            (click)="abrirModalRespuesta(request)">
+            <span class="material-icons-sharp">reply</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Mensaje si no hay solicitudes -->
+      <div class="no-requests" *ngIf="filteredRequests.length === 0 && !loading">
+        <span class="material-icons-sharp">inbox</span>
+        <h3>No hay solicitudes {{ currentFilter === 'pending' ? 'pendientes' : 'que mostrar' }}</h3>
+        <p *ngIf="currentFilter === 'pending'">
+          Todas las solicitudes de tu equipo han sido procesadas
+        </p>
+        <p *ngIf="currentFilter === 'all'">
+          No se encontraron solicitudes con los filtros aplicados
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Modal Detalles -->
+  <div class="modal" *ngIf="showDetailsModal">
+    <div class="modal-content large-modal">
+      <div class="modal-header">
+        <h2>Detalles de la Solicitud</h2>
+        <button class="btn-icon close" (click)="cerrarModales()">
+          <span class="material-icons-sharp">close</span>
+        </button>
+      </div>
+      
+      <div class="details-container">
+        <!-- Información del Empleado -->
+        <div class="details-section">
+          <h3>
+            <span class="material-icons-sharp">person</span>
+            Información del Empleado
+          </h3>
+          <div class="details-grid">
+            <div class="detail-item">
+              <strong>Nombre:</strong> {{ selectedRequest?.employeeName }}
+            </div>
+            <div class="detail-item">
+              <strong>Departamento:</strong> {{ selectedRequest?.employeeDepartment }}
+            </div>
+          </div>
+        </div>
+
+        <!-- Información de la Solicitud -->
+        <div class="details-section">
+          <h3>
+            <span class="material-icons-sharp">event_note</span>
+            Información de la Solicitud
+          </h3>
+          <div class="details-grid">
+            <div class="detail-item">
+              <strong>ID:</strong> {{ selectedRequest?.id }}
+            </div>
+            <div class="detail-item">
+              <strong>Tipo:</strong> {{ getTypeDisplayName(selectedRequest?.type!) }}
+            </div>
+            <div class="detail-item">
+              <strong>Estado:</strong> 
+              <span class="status-badge" [class]="getStatusClass(selectedRequest?.status!)">
+                {{ getStatusDisplayName(selectedRequest?.status!) }}
+              </span>
+            </div>
+            <div class="detail-item">
+              <strong>Fecha de Solicitud:</strong> {{ selectedRequest?.requestDate | date:'dd/MM/yyyy HH:mm' }}
+            </div>
+            <div class="detail-item">
+              <strong>Fecha de Inicio:</strong> {{ selectedRequest?.startDate | date:'dd/MM/yyyy' }}
+            </div>
+            <div class="detail-item">
+              <strong>Fecha de Fin:</strong> {{ selectedRequest?.endDate | date:'dd/MM/yyyy' }}
+            </div>
+            <div class="detail-item">
+              <strong>Duración:</strong> {{ calculateDays(selectedRequest?.startDate!, selectedRequest?.endDate!) }} día(s)
+            </div>
+            <div class="detail-item full-width">
+              <strong>Justificación:</strong> 
+              <p class="justification-full">{{ selectedRequest?.justification }}</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Evidencia -->
+        <div class="details-section" *ngIf="selectedRequest?.evidenceImagePath">
+            <h3>
+                <span class="material-icons-sharp">attach_file</span>
+                Evidencia Adjunta
+            </h3>
+            <div class="evidence-container">
+                <a 
+                [href]="getEvidenceImageUrl(selectedRequest?.evidenceImagePath)" 
+                download
+                class="btn-primary"
+                >
+                <span class="material-icons-sharp">download</span>
+                Descargar Evidencia
+                </a>
+            </div>
+        </div>
+
+        <!-- Respuesta del Jefe (si existe) -->
+        <div class="details-section" *ngIf="selectedRequest?.headResponseDate">
+          <h3>
+            <span class="material-icons-sharp">assignment_turned_in</span>
+            Respuesta del Jefe
+          </h3>
+          <div class="details-grid">
+            <div class="detail-item">
+              <strong>Fecha de Respuesta:</strong> {{ selectedRequest?.headResponseDate | date:'dd/MM/yyyy HH:mm' }}
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="modal-actions">
+        <button 
+          class="btn-primary" 
+          *ngIf="canRespond(selectedRequest!)"
+          (click)="abrirModalRespuesta(selectedRequest!)">
+          <span class="material-icons-sharp">reply</span>
+          Responder
+        </button>
+        <button class="btn-secondary" (click)="cerrarModales()">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Respuesta -->
+  <div class="modal" *ngIf="showResponseModal">
+    <div class="modal-content medium-modal">
+      <div class="modal-header">
+        <h2>Responder Solicitud</h2>
+        <button class="btn-icon close" (click)="cerrarModales()">
+          <span class="material-icons-sharp">close</span>
+        </button>
+      </div>
+      
+      <div class="response-form">
+        <!-- Resumen de la solicitud -->
+        <div class="request-summary">
+          <h3>{{ selectedRequest?.employeeName }} - {{ getTypeDisplayName(selectedRequest?.type!) }}</h3>
+          <p>
+            Del {{ selectedRequest?.startDate | date:'dd/MM/yyyy' }} 
+            al {{ selectedRequest?.endDate | date:'dd/MM/yyyy' }}
+            ({{ calculateDays(selectedRequest?.startDate!, selectedRequest?.endDate!) }} día(s))
+          </p>
+        </div>
+
+        <form (submit)="enviarRespuesta(); $event.preventDefault()">
+          <div class="form-group">
+            <label>Decisión:</label>
+            <div class="radio-group">
+              <label class="radio-option approve">
+                <input 
+                  type="radio" 
+                  name="decision" 
+                  [value]="LeaveStatus.APROBADO"
+                  [(ngModel)]="responseData.status"
+                />
+                <span class="radio-label">
+                  <span class="material-icons-sharp">check_circle</span>
+                  Aprobar
+                </span>
+              </label>
+              
+              <label class="radio-option reject">
+                <input 
+                  type="radio" 
+                  name="decision" 
+                  [value]="LeaveStatus.RECHAZADO"
+                  [(ngModel)]="responseData.status"
+                />
+                <span class="radio-label">
+                  <span class="material-icons-sharp">cancel</span>
+                  Rechazar
+                </span>
+              </label>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Comentarios:</label>
+            <textarea
+              [(ngModel)]="responseData.comment"
+              name="comment"
+              rows="4"
+              placeholder="Ingrese sus comentarios sobre la decisión..."
+              required
+            ></textarea>
+          </div>
+
+          <div class="modal-actions">
+            <button type="submit" class="btn-primary">
+              <span class="material-icons-sharp">send</span>
+              Enviar Respuesta
+            </button>
+            <button type="button" class="btn-secondary" (click)="cerrarModales()">
+              Cancelar
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

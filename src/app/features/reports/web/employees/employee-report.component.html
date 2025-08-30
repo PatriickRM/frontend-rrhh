@@ -1,0 +1,35 @@
+<div class="filter-container">
+  <label>Fecha inicio:</label>
+  <input type="date" [(ngModel)]="startDate">
+
+  <label>Fecha fin:</label>
+  <input type="date" [(ngModel)]="endDate">
+
+  <button (click)="generateReport()">Reporte</button>
+  <button (click)="downloadPDF()">Exportar PDF</button>
+</div>
+
+<table *ngIf="employees.length > 0">
+  <thead>
+    <tr>
+      <th>Nombre</th>
+      <th>DNI</th>
+      <th>Email</th>
+      <th>Fecha de ingreso</th>
+      <th>Puesto</th>
+      <th>Departamento</th>
+      <th>Estado</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr *ngFor="let emp of employees">
+      <td>{{ emp.fullName }}</td>
+      <td>{{ emp.dni }}</td>
+      <td>{{ emp.email }}</td>
+      <td>{{ emp.hireDate || '-' }}</td>
+      <td>{{ emp.positionTitle }}</td>
+      <td>{{ emp.departmentName }}</td>
+      <td>{{ emp.status }}</td>
+    </tr>
+  </tbody>
+</table>

@@ -1,0 +1,994 @@
+<div>
+  <h1>Gestión de Empleados</h1>
+
+  <p *ngIf="error" class="danger">{{ error }}</p>
+
+  <section *ngIf="!loading && !error" class="data-table-section">
+    <!-- Barra de herramientas -->
+    <div class="toolbar">
+      <div class="search-container">
+        <input 
+          type="text" 
+          [(ngModel)]="searchName" 
+          placeholder="Buscar por nombre..."
+          class="search-input"
+          (keyup.enter)="buscarPorNombre()"
+        />
+        <button class="btn-search" (click)="buscarPorNombre()">
+          <span class="material-icons-sharp">search</span>
+        </button>
+      </div>
+      
+      <div class="action-buttons">
+        <button class="btn-secondary" (click)="abrirFiltros()">
+          <span class="material-icons-sharp">filter_list</span>
+          Filtros
+        </button>
+        <button class="btn-primary" (click)="abrirFormulario('Agregar')">
+          <span class="material-icons-sharp">add</span>
+          Agregar Empleado
+        </button>
+      </div>
+    </div>
+
+    <!-- Grid de tarjetas de empleados -->
+    <div class="employees-grid">
+      <div class="employee-card" *ngFor="let empleado of empleados; index as i">
+        <div class="card-header">
+          <div class="employee-avatar">
+            {{ getEmployeeInitials(empleado.fullName) }}
+          </div>
+          <div class="employee-info">
+            <h3>{{ empleado.fullName }}</h3>
+            <div class="employee-id">DNI: {{ empleado.dni }}</div>
+          </div>
+          <div class="status-container">
+            <span class="status-badge" [class]="getStatusClass(empleado.status)">
+              {{ empleado.status }}
+            </span>
+          </div>
+        </div>
+        
+        <div class="card-body">
+          <div class="info-row">
+            <span class="info-label">
+              <span class="material-icons-sharp">email</span>
+              Email
+            </span>
+            <span class="info-value">{{ empleado.email }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">
+              <span class="material-icons-sharp">work</span>
+              Cargo
+            </span>
+            <span class="info-value">{{ empleado.positionTitle }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">
+              <span class="material-icons-sharp">business</span>
+              Departamento
+            </span>
+            <span class="info-value">{{ empleado.departmentName }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">
+              <span class="material-icons-sharp">phone</span>
+              Teléfono
+            </span>
+            <span class="info-value">{{ empleado.phone }}</span>
+          </div>
+        </div>
+
+        <div class="card-actions">
+          <button class="btn-icon view" title="Ver" (click)="abrirDetalles(empleado)">
+            <span class="material-icons-sharp">visibility</span>
+          </button>
+          <button class="btn-icon edit" title="Editar" (click)="abrirFormulario('Editar', empleado)">
+            <span class="material-icons-sharp">edit</span>
+          </button>
+          <button class="btn-icon delete" title="Retirar" (click)="abrirConfirmacion(empleado)">
+            <span class="material-icons-sharp">person_remove</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Modal Formulario -->
+  <div class="modal" *ngIf="showFormModal">
+    <div class="modal-content large-modal">
+      <h2>{{ formMode }} Empleado</h2>
+      <form (submit)="handleGuardar($event)">
+        
+        <!-- Datos de Usuario (solo para agregar) -->
+        <div class="form-section" *ngIf="formMode === 'Agregar'">
+          <h3>Datos de Acceso</h3>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Usuario:</label>
+              <input
+                type="text"
+                name="username"
+                [value]="selectedEmpleado?.username || ''"
+                required
+              />
+            </div>
+            <div class="form-group">
+              <label>Contraseña:</label>
+              <input
+                type="password"
+                name="password"
+                required
+              />
+            </div>
+          </div>
+        </div>
+
+        <!-- Datos Personales -->
+        <div class="form-section">
+          <h3>Datos Personales</h3>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Nombre Completo:</label>
+              <input
+                type="text"
+                name="fullName"
+                [value]="selectedEmpleado?.fullName || ''"
+                required
+              />
+            </div>
+            <div class="form-group">
+              <label>DNI:</label>
+              <input
+                type="text"
+                name="dni"
+                [value]="selectedEmpleado?.dni || ''"
+                maxlength="8"
+                required
+              />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Email:</label>
+              <input
+                type="email"
+                name="email"
+                [value]="selectedEmpleado?.email || ''"
+                required
+              />
+            </div>
+            <div class="form-group">
+              <label>Teléfono:</label>
+              <input
+                type="tel"
+                name="phone"
+                [value]="selectedEmpleado?.phone || ''"
+                maxlength="15"
+                required
+              />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Dirección:</label>
+              <input
+                type="text"
+                name="address"
+                [value]="selectedEmpleado?.address || ''"
+                required
+              />
+            </div>
+            <div class="form-group">
+              <label>Género:</label>
+              <select name="gender" required>
+                <option value="">Seleccione un género</option>
+                <option 
+                  value="MASCULINO"
+                  [selected]="selectedEmpleado?.gender === Gender.MASCULINO">
+                  Masculino
+                </option>
+                <option 
+                  value="FEMENINO"
+                  [selected]="selectedEmpleado?.gender === Gender.FEMENINO">
+                  Femenino
+                </option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Fecha de Nacimiento:</label>
+              <input
+                type="date"
+                name="dateOfBirth"
+                [value]="selectedEmpleado?.dateOfBirth || ''"
+                required
+              />
+            </div>
+            <div class="form-group" *ngIf="formMode === 'Editar'">
+              <label>Estado:</label>
+              <select name="status" required>
+                <option 
+                  value="CONTRATADO"
+                  [selected]="selectedEmpleado?.status === EmployeeStatus.CONTRATADO">
+                  Contratado
+                </option>
+                <option 
+                  value="SUSPENDIDO"
+                  [selected]="selectedEmpleado?.status === EmployeeStatus.FINALIZADO">
+                  Suspendido
+                </option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Datos Laborales -->
+        <div class="form-section">
+          <h3>Datos Laborales</h3>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Cargo:</label>
+              <select name="positionId" required [disabled]="!selectedDepartmentId">
+                <option value="">Seleccione un cargo</option>
+                <option 
+                  *ngFor="let pos of posiciones" 
+                  [value]="pos.id"
+                  [selected]="selectedEmpleado?.positionTitle === pos.title">
+                  {{ pos.title }}
+                </option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Departamento:</label>
+              <select name="departmentId" required (change)="onDepartamentoChange($event)">
+                <option value="">Seleccione un departamento</option>
+                <option 
+                  *ngFor="let dept of departamentos" 
+                  [value]="dept.id"
+                  [selected]="selectedEmpleado?.departmentName === dept.name">
+                  {{ dept.name }}
+                </option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Fecha de Contratación:</label>
+              <input
+                type="date"
+                name="hireDate"
+                [value]="selectedEmpleado?.hireDate || ''"
+                required
+              />
+            </div>
+            <div class="form-group">
+              <label>Fecha Fin de Contrato:</label>
+              <input
+                type="date"
+                name="contractEndDate"
+                [value]="selectedEmpleado?.contractEndDate || ''"
+                required
+              />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Salario:</label>
+              <input
+                type="number"
+                name="salary"
+                step="0.01"
+                min="1200"
+                [value]="selectedEmpleado?.salary || ''"
+                required
+              />
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="submit" class="btn-primary">Guardar</button>
+          <button type="button" class="btn-secondary" (click)="cerrarModal()">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Filtros -->
+  <div class="modal" *ngIf="showFiltersModal">
+    <div class="modal-content">
+      <h2>Filtros</h2>
+      <div class="form-group">
+        <label>Estado:</label>
+        <select [(ngModel)]="statusFilter">
+          <option value="">Todos los estados</option>
+          <option value="CONTRATADO">Contratado</option>
+          <option value="FINALIZADO">Finalizado</option>
+          <option value="RETIRADO">Retirado</option>
+        </select>
+      </div>
+      
+      <div class="form-group">
+        <label>Departamento:</label>
+        <select [(ngModel)]="departmentFilter">
+          <option value="">Todos los departamentos</option>
+          <option *ngFor="let dept of departamentos" [value]="dept.id">
+            {{ dept.name }}
+          </option>
+        </select>
+      </div>
+      
+      <div class="form-group">
+        <label>Cargo:</label>
+        <select [(ngModel)]="positionFilter">
+          <option value="">Todos los cargos</option>
+          <option *ngFor="let pos of posiciones" [value]="pos.id" >
+            {{ pos.title }}
+          </option>
+        </select>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn-primary" (click)="aplicarFiltros()">Aplicar</button>
+        <button class="btn-secondary" (click)="limpiarFiltros()">Limpiar</button>
+        <button class="btn-secondary" (click)="cerrarModal()">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Confirmación -->
+  <div class="modal" *ngIf="showConfirmModal">
+    <div class="modal-content">
+      <h2>¿Confirmar retiro del empleado?</h2>
+      <p>¿Está seguro que desea retirar al empleado <strong>{{ selectedEmpleado?.fullName }}</strong>?</p>
+      <p>Esta acción cambiará su estado a "RETIRADO".</p>
+      <div class="modal-actions">
+        <button class="btn-danger" (click)="handleEliminar()">Retirar</button>
+        <button class="btn-secondary" (click)="cerrarModal()">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Detalles -->
+  <div class="modal" *ngIf="showDetailsModal">
+    <div class="modal-content large-modal">
+      <h2>Detalles del Empleado</h2>
+      <div class="details-container">
+        
+        <!-- Información Personal -->
+        <div class="details-section">
+          <h3>Información Personal</h3>
+          <div class="details-grid">
+            <div class="detail-item">
+              <strong>Nombre Completo:</strong> {{ selectedEmpleado?.fullName }}
+            </div>
+            <div class="detail-item">
+              <strong>DNI:</strong> {{ selectedEmpleado?.dni }}
+            </div>
+            <div class="detail-item">
+              <strong>Email:</strong> {{ selectedEmpleado?.email }}
+            </div>
+            <div class="detail-item">
+              <strong>Teléfono:</strong> {{ selectedEmpleado?.phone }}
+            </div>
+            <div class="detail-item">
+              <strong>Dirección:</strong> {{ selectedEmpleado?.address }}
+            </div>
+            <div class="detail-item">
+              <strong>Género:</strong> {{ selectedEmpleado?.gender }}
+            </div>
+            <div class="detail-item">
+              <strong>Fecha de Nacimiento:</strong> {{ selectedEmpleado?.dateOfBirth | date:'dd/MM/yyyy' }}
+            </div>
+            <div class="detail-item">
+              <strong>Estado:</strong> 
+              <span class="status-badge" [class]="getStatusClass(selectedEmpleado?.status!)">
+                {{ selectedEmpleado?.status }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Información Laboral -->
+        <div class="details-section">
+          <h3>Información Laboral</h3>
+          <div class="details-grid">
+            <div class="detail-item">
+              <strong>Cargo:</strong> {{ selectedEmpleado?.positionTitle }}
+            </div>
+            <div class="detail-item">
+              <strong>Departamento:</strong> {{ selectedEmpleado?.departmentName }}
+            </div>
+            <div class="detail-item">
+              <strong>Fecha de Contratación:</strong> {{ selectedEmpleado?.hireDate | date:'dd/MM/yyyy' }}
+            </div>
+            <div class="detail-item">
+              <strong>Fin de Contrato:</strong> {{ selectedEmpleado?.contractEndDate | date:'dd/MM/yyyy' }}
+            </div>
+            <div class="detail-item">
+              <strong>Salario:</strong> {{ selectedEmpleado?.salary | currency:'USD':'symbol':'1.2-2' }}
+            </div>
+          </div>
+        </div>
+
+        <!-- Información de Usuario -->
+        <div class="details-section">
+          <h3>Información de Acceso</h3>
+          <div class="details-grid">
+            <div class="detail-item">
+              <strong>ID Usuario:</strong> {{ selectedEmpleado?.userId }}
+            </div>
+            <div class="detail-item">
+              <strong>Nombre de Usuario:</strong> {{ selectedEmpleado?.username }}
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="modal-actions">
+        <button class="btn-secondary" (click)="cerrarModal()">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+  background: white;
+  padding: 1.5rem;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+.card-actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+}
+
+.btn-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: none;
+  background: #f4f6f9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+}
+
+.btn-icon span {
+  font-size: 20px;
+  color: #555;
+}
+
+
+.search-container {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.search-input {
+  padding: 0.75rem 1rem;
+  border: 2px solid #e9ecef;
+  border-radius: 25px;
+  min-width: 300px;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 3px rgba(0,123,255,0.1);
+}
+
+.btn-search {
+  background: linear-gradient(135deg, #007bff, #0056b3);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 45px;
+  height: 45px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.btn-search:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 15px rgba(0,123,255,0.3);
+}
+
+.action-buttons {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.btn-primary, .btn-secondary {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 25px;
+  cursor: pointer;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.3s ease;
+  font-size: 0.9rem;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #007bff, #0056b3);
+  color: white;
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0,123,255,0.3);
+}
+
+.btn-secondary {
+  background: #6c757d;
+  color: white;
+}
+
+.btn-secondary:hover {
+  background: #545b62;
+  transform: translateY(-2px);
+}
+
+.employees-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1rem;
+}
+
+.employee-card {
+  background: white;
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  border-top: 4px solid;
+  border-image: black;
+}
+
+
+.card-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.employee-avatar {
+  width: 65px;
+  height: 65px;
+  border-radius: 50%;
+  background: black;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 1.4rem;
+  font-weight: bold;
+  flex-shrink: 0;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.employee-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.employee-info h3 {
+  margin: 0 0 0.5rem 0;
+  color: #2c3e50;
+  font-size: 1.1rem;
+  font-weight: 600;
+  word-wrap: break-word;
+}
+
+.employee-id {
+  color: #6c757d;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.status-container {
+  flex-shrink: 0;
+}
+
+.card-body {
+  margin-bottom: 1.5rem;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #f8f9fa;
+}
+
+.info-row:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+}
+
+.info-label {
+  font-weight: 500;
+  color: #495057;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.info-label .material-icons-sharp {
+  font-size: 16px;
+  color: #007bff;
+}
+
+.info-value {
+  color: #2c3e50;
+  font-size: 0.85rem;
+  text-align: right;
+  font-weight: 500;
+  max-width: 60%;
+  word-break: break-word;
+}
+
+.status-badge {
+  padding: 0.4rem 0.8rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  text-align: center;
+  display: inline-block;
+  min-width: 85px;
+}
+
+.status-active {
+  background: linear-gradient(135deg, #d4edda, #c3e6cb);
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+.status-suspended {
+  background: linear-gradient(135deg, #fff3cd, #ffeaa7);
+  color: #856404;
+  border: 1px solid #ffeaa7;
+}
+
+.status-retired {
+  background: linear-gradient(135deg, #f8d7da, #f5c6cb);
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+
+.status-default {
+  background: linear-gradient(135deg, #e2e3e5, #d6d8db);
+  color: #6c757d;
+  border: 1px solid #d6d8db;
+}
+
+.card-actions {
+  display: flex;
+  justify-content: center;
+  gap: 0.75rem;
+  padding-top: 1rem;
+  border-top: 2px solid #f8f9fa;
+}
+
+.btn-icon {
+  width: 42px;
+  height: 42px;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  font-size: 1.1rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.btn-icon.view {
+  background: linear-gradient(135deg, #17a2b8, #138496);
+  color: white;
+}
+
+.btn-icon.view:hover {
+  transform: scale(1.1) rotate(5deg);
+  box-shadow: 0 4px 15px rgba(23,162,184,0.4);
+}
+
+.btn-icon.edit {
+  background: linear-gradient(135deg, #28a745, #1e7e34);
+  color: white;
+}
+
+.btn-icon.edit:hover {
+  transform: scale(1.1) rotate(-5deg);
+  box-shadow: 0 4px 15px rgba(40,167,69,0.4);
+}
+
+.btn-icon.delete {
+  background: linear-gradient(135deg, #dc3545, #c82333);
+  color: white;
+}
+
+.btn-icon.delete:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 15px rgba(220,53,69,0.4);
+}
+
+
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  backdrop-filter: blur(2px);
+}
+
+.modal-content {
+  background: white;
+  padding: 2rem;
+  border-radius: 16px;
+  max-width: 500px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-30px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.large-modal .modal-content {
+  max-width: 800px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modal h2 {
+  margin-bottom: 1.5rem;
+  color: #2c3e50;
+  text-align: center;
+  font-weight: 600;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.btn-danger {
+  background: linear-gradient(135deg, #dc3545, #c82333);
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 25px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.btn-danger:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(220,53,69,0.3);
+}
+
+.form-section {
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  border: 1px solid #e9ecef;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #f8f9fa, #ffffff);
+}
+
+.form-section h3 {
+  margin: 0 0 1rem 0;
+  color: #495057;
+  font-size: 1.1rem;
+  border-bottom: 2px solid #007bff;
+  padding-bottom: 0.5rem;
+}
+
+.form-row {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.form-group {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group label {
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: #495057;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  padding: 0.75rem;
+  border: 2px solid #e9ecef;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 3px rgba(0,123,255,0.1);
+}
+
+.details-container {
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+.details-section {
+  margin-bottom: 2rem;
+}
+
+.details-section h3 {
+  margin: 0 0 1rem 0;
+  color: #495057;
+  font-size: 1.1rem;
+  border-bottom: 2px solid #007bff;
+  padding-bottom: 0.5rem;
+}
+
+.details-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.detail-item {
+  padding: 0.75rem;
+  background: linear-gradient(135deg, #f8f9fa, #ffffff);
+  border-radius: 8px;
+  border-left: 4px solid #007bff;
+}
+
+.detail-item strong {
+  display: block;
+  margin-bottom: 0.25rem;
+  color: #495057;
+}
+
+.danger {
+  background: #f8d7da;
+  color: #721c24;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  border-left: 4px solid #dc3545;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .employees-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+  }
+  
+  .search-container {
+    justify-content: center;
+  }
+  
+  .search-input {
+    min-width: 250px;
+  }
+  
+  .action-buttons {
+    justify-content: center;
+  }
+  
+  .form-row {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .details-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .large-modal .modal-content {
+    max-width: 95vw;
+    margin: 0.5rem;
+  }
+
+  .card-header {
+    flex-direction: column;
+    text-align: center;
+    gap: 0.75rem;
+  }
+
+  .employee-info {
+    text-align: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .employees-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .employee-card {
+    padding: 1rem;
+  }
+  
+  .card-actions {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  
+  .search-input {
+    min-width: 200px;
+  }
+}
+</style>

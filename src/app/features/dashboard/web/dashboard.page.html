@@ -1,0 +1,27 @@
+<h1>Dashboard</h1>
+
+<div *ngIf="loading()">
+  <p>Cargando información...</p>
+</div>
+
+<div *ngIf="error()">
+  <p class="error">{{ error() }}</p>
+</div>
+
+<div class="analyse" *ngIf="!loading() && !error()">
+  <ng-container *ngIf="hasCards(); else noCards">
+    <div class="card" *ngFor="let card of cards(); trackBy: trackByTitle">
+      <div class="status">
+        <div class="info">
+          <h3>{{ card.title }}</h3>
+          <h1>{{ card.value }}</h1>
+        </div>
+        <span class="material-icons-sharp card-icon">{{ card.icon }}</span>
+      </div>
+    </div>
+  </ng-container>
+
+  <ng-template #noCards>
+    <p>No hay tarjetas disponibles.</p>
+  </ng-template>
+</div>
