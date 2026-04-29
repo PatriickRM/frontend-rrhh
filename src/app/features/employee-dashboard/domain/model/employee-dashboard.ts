@@ -1,10 +1,12 @@
 import { Employee } from '../../../employees/domain/model/employee';
 
 export interface LeaveBalanceDTO {
-  totalVacationDays: number;
+  employeeId: number;
+  employeeName: string;
+  yearsOfService: number;
+  maxVacationDays: number;       // era totalVacationDays
   usedVacationDays: number;
-  remainingVacationDays: number;
-  year: number;
+  availableVacationDays: number; // era remainingVacationDays
 }
 
 export interface MonthlyStatsDTO {

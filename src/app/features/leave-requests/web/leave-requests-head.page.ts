@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
@@ -9,6 +9,7 @@ import {
   LeaveStatus 
 } from '../domain/model/leave-request.model';
 import { environment } from '../../../../environment/environments.development';
+import { ToastService } from '../../../core/services/toast.service';
 
 @Component({
   selector: 'app-head-leave-requests',
@@ -19,6 +20,7 @@ import { environment } from '../../../../environment/environments.development';
 })
 export class HeadLeaveRequestsPage implements OnInit {
   private readonly BASE_URL = `${environment.apiBaseUrl}/api/head/leave-requests`;
+  private toast = inject(ToastService);
 
   requests: LeaveRequestHeadDTO[] = [];
   filteredRequests: LeaveRequestHeadDTO[] = [];
@@ -157,11 +159,11 @@ export class HeadLeaveRequestsPage implements OnInit {
         } else {
           this.loadAllRequests();
         }
-        alert('Respuesta enviada exitosamente');
+        this.toast.success('Respuesta enviada exitosamente')
       },
       error: (err) => {
         console.error('Error al enviar respuesta:', err);
-        alert('Error al enviar la respuesta: ' + (err.error?.message || 'Error desconocido'));
+        this.toast.error('Error al enviar la respuesta')
       }
     });
   }

@@ -7,6 +7,7 @@ import { EmployeesService } from '../application/employee.service';
 import { DepartmentsService } from '../../departments/application/departments.service';
 import { PositionsService } from '../../positions/application/positions.service';
 import { FormsModule } from '@angular/forms';
+import { ToastService } from '../../../core/services/toast.service';
 
 @Component({
   selector: 'app-employees',
@@ -19,6 +20,7 @@ export class EmployeesPage implements OnInit {
   private employeesService = inject<EmployeesService>(EMPLOYEES_SERVICE);
   private departmentsService = inject<DepartmentsService>(DEPARTMENTS_SERVICE);
   private positionsService = inject<PositionsService>(POSITIONS_SERVICE);
+  private toast = inject(ToastService);
 
   empleados: Employee[] = [];
   departamentos: Department[] = [];
@@ -146,7 +148,8 @@ export class EmployeesPage implements OnInit {
         },
         error: (err) => {
           console.error('Error guardando:', err);
-          alert('Error al guardar el empleado: ' + (err.error?.message || 'Error desconocido'));
+          this.toast.error('Error al guardar el empleado')
+
         },
       });
     } else if (this.selectedEmpleado) {
@@ -173,7 +176,7 @@ export class EmployeesPage implements OnInit {
         },
         error: (err) => {
           console.error('Error actualizando:', err);
-          alert('Error al actualizar el empleado: ' + (err.error?.message || 'Error desconocido'));
+          this.toast.error('Error al actualizar')
         },
       });
     }
@@ -190,7 +193,7 @@ export class EmployeesPage implements OnInit {
       },
       error: (err) => {
         console.error('Error:', err);
-        alert('Error al retirar el empleado.');
+        this.toast.error('Error al retirar el empleado')
       }
     });
   }

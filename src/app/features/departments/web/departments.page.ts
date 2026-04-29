@@ -7,6 +7,7 @@ import { DepartmentsService } from '../application/departments.service';
 // 📦 librerías para exportar PDF
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { ToastService } from '../../../core/services/toast.service';
 
 @Component({
   selector: 'app-departments',
@@ -17,7 +18,8 @@ import autoTable from 'jspdf-autotable';
 })
 export class DepartmentsPage implements OnInit {
   private departmentsService = inject<DepartmentsService>(DEPARTMENTS_SERVICE);
-
+  private toast = inject(ToastService);
+  
   departamentos: Department[] = [];
   allDepartamentos: Department[] = [];
   loading = true;
@@ -126,7 +128,7 @@ export class DepartmentsPage implements OnInit {
         this.aplicarFiltro();
         this.cerrarModal();
       },
-      error: () => alert('Error al eliminar el departamento.')
+      error: () => this.toast.error('Error al deshabilitar el departamento')
     });
   }
 

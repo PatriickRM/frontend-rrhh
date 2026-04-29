@@ -1,7 +1,10 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { EmployeeDashboardService } from '../application/employee-dashboard.service';
-import { EmployeeDashboardDTO, EmployeeStatsDTO, LeaveBalanceDTO, MonthlyStatsDTO, TypeStatsDTO } from '../domain/model/employee-dashboard';
+import {
+  EmployeeDashboardDTO, EmployeeStatsDTO,
+  LeaveBalanceDTO
+} from '../domain/model/employee-dashboard';
 import { Employee } from '../../employees/domain/model/employee';
 import { EMPLOYEE_DASHBOARD_SERVICE } from '../../../shared/tokens/di-tokens';
 
@@ -19,70 +22,55 @@ export class EmployeeDashboardPage implements OnInit {
   employee: Employee | null = null;
   leaveBalance: LeaveBalanceDTO | null = null;
   stats: EmployeeStatsDTO | null = null;
-  
+
   loading = true;
   error: string | null = null;
 
-  ngOnInit(): void {
-    this.loadDashboard();
-  }
+  ngOnInit(): void { this.loadDashboard(); }
 
   loadDashboard(): void {
+    this.loading = true;
+    this.error = null;
     this.dashboardService.getDashboard().subscribe({
       next: (data) => {
         this.dashboardData = data;
-        this.employee = data.employee;
+        this.employee     = data.employee;
         this.leaveBalance = data.leaveBalance;
-        this.stats = data.stats;
+        this.stats        = data.stats;
         this.loading = false;
       },
       error: (err) => {
-        this.error = 'Error al cargar el dashboard del empleado.';
+        this.error = 'Error al cargar el dashboard.';
         this.loading = false;
-        console.error('Error:', err);
+        console.error(err);
       }
     });
   }
 
-  loadStats(): void {
-    this.dashboardService.getStats().subscribe({
-      next: (data) => {
-        this.stats = data;
-      },
-      error: (err) => {
-        console.error('Error cargando estadísticas:', err);
-      }
-    });
-  }
-
+  // FIX: usar los campos correctos del backend
   getVacationProgressPercentage(): number {
-    if (!this.leaveBalance || this.leaveBalance.totalVacationDays === 0) {
-      return 0;
-    }
-    return (this.leaveBalance.usedVacationDays / this.leaveBalance.totalVacationDays) * 100;
+    if (!this.leaveBalance || this.leaveBalance.maxVacationDays === 0) return 0;
+    return Math.min(
+      (this.leaveBalance.usedVacationDays / this.leaveBalance.maxVacationDays) * 100,
+      100
+    );
   }
 
   getApprovalRate(): number {
-    if (!this.stats || this.stats.totalRequests === 0) {
-      return 0;
-    }
+    if (!this.stats || this.stats.totalRequests === 0) return 0;
     return (this.stats.approvedRequests / this.stats.totalRequests) * 100;
   }
 
   getEmployeeInitials(fullName: string): string {
-    return fullName.split(' ').map(name => name[0]).slice(0, 2).join('').toUpperCase();
+    return (fullName ?? '').split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
   }
 
   getStatusClass(status: string): string {
-    switch (status) {
-      case 'CONTRATADO':
-        return 'status-active';
-      case 'FINALIZADO':
-        return 'status-finalized';
-      case 'RETIRADO':
-        return 'status-retired';
-      default:
-        return 'status-default';
-    }
+    const map: Record<string, string> = {
+      CONTRATADO: 'status-active',
+      FINALIZADO: 'status-finalized',
+      RETIRADO: 'status-retired'
+    };
+    return map[status] ?? 'status-default';
   }
 }

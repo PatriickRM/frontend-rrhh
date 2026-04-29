@@ -1,28 +1,46 @@
 import { Injectable } from '@angular/core';
 
-@Injectable({
-  providedIn: 'root'
-})
+export interface StoredUser {
+  usuario: string;
+  rol: string;
+}
+
+
+@Injectable({ providedIn: 'root' })
 export class TokenStorage {
-  private key = 'token';
-  private userKey = 'user';
+  private readonly TOKEN_KEY = 'token';
+  private readonly USER_KEY  = 'user';
 
   get(): string | null {
-    return localStorage.getItem(this.key);
+    return localStorage.getItem(this.TOKEN_KEY);
   }
 
-  set(token: string, user?: { usuario: string; rol: string }): void {
-    localStorage.setItem(this.key, token);
+  set(token: string, user?: StoredUser): void {
+    localStorage.setItem(this.TOKEN_KEY, token);
     if (user) {
-      localStorage.setItem(this.userKey, JSON.stringify(user));
+      localStorage.setItem(this.USER_KEY, JSON.stringify(user));
     }
   }
 
   clear(): void {
-    localStorage.removeItem(this.key);
+    // FIX: remover AMBAS claves, no solo el token
+    localStorage.removeItem(this.TOKEN_KEY);
+    localStorage.removeItem(this.USER_KEY);
   }
-  getUser(): { usuario: string; rol: string } | null {
-    const data = localStorage.getItem(this.userKey);
+
+  getUser(): StoredUser | null {
+    const data = localStorage.getItem(this.USER_KEY);
     return data ? JSON.parse(data) : null;
+  }
+
+  isTokenExpired(): boolean {
+    const token = this.get();
+    if (!token) return true;
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      return payload.exp * 1000 < Date.now();
+    } catch {
+      return true;
+    }
   }
 }
