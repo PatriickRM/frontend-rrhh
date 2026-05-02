@@ -1,116 +1,353 @@
+<!-- ============================================================
+     Departments Page — RRHH Sistema Redesign Fase 1
+     Muestra el patrón de tabla + side panel + modales nuevos
+     ============================================================ -->
+
 <div>
-  <h1>Gestión de Departamentos</h1>
 
-  <p *ngIf="error" class="danger">{{ error }}</p>
-
-  <section *ngIf="!loading && !error" class="data-table-section">
-    <div class="table-header">
-      <button class="btn-primary" (click)="abrirFormulario('Agregar')">
-        <span class="material-icons-sharp">add</span>
-        Agregar Departamento
+  <!-- Page heading -->
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:28px;flex-wrap:wrap">
+    <div>
+      <h1 style="font-family:var(--font-display);font-size:1.5rem;font-weight:700;letter-spacing:-0.02em">
+        Departamentos
+      </h1>
+      <p style="font-size:0.82rem;color:var(--text-muted);margin-top:3px">
+        {{ allDepartamentos.length }} departamentos en total
+      </p>
+    </div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-ghost" (click)="exportarPDF()">
+        <span class="material-icons-sharp" style="font-size:17px">picture_as_pdf</span>
+        Exportar PDF
       </button>
-
-      <button class="btn-primary" (click)="toggleFiltro()">
-        <span class="material-icons-sharp">
-          {{ mostrarSoloDeshabilitados ? 'visibility' : 'visibility_off' }}
-        </span>
-        {{ mostrarSoloDeshabilitados ? 'Ver Habilitados' : 'Ver Deshabilitados' }}
-      </button>
-
-      <!-- Nuevo botón de exportar PDF -->
-      <button class="btn-primary" (click)="exportarPDF()">
-        <span class="material-icons-sharp">picture_as_pdf</span>
-        Exportar a PDF
+      <button class="btn btn-primary" (click)="abrirFormulario('Agregar')">
+        <span class="material-icons-sharp" style="font-size:17px">add</span>
+        Nuevo departamento
       </button>
     </div>
+  </div>
 
-    <div class="table-container">
+  <!-- Error banner -->
+  <div *ngIf="error" class="error-banner" style="margin-bottom:20px">
+    <span class="material-icons-sharp">error_outline</span>
+    <span>{{ error }}</span>
+  </div>
+
+  <!-- ── Data table section ──────────────────────────────── -->
+  <div class="data-section" *ngIf="!loading">
+
+    <!-- Toolbar -->
+    <div class="section-toolbar">
+      <div class="toolbar-left">
+
+        <!-- Search -->
+        <div class="search-box">
+          <span class="material-icons-sharp">search</span>
+          <input
+            class="search-input"
+            type="text"
+            placeholder="Buscar departamento..."
+            [(ngModel)]="searchTerm"
+            (input)="onSearch()"
+          />
+        </div>
+
+        <!-- Filter chips -->
+        <button class="filter-chip"
+                [class.active]="!mostrarSoloDeshabilitados"
+                (click)="setFiltro(false)">
+          <span class="material-icons-sharp">check_circle</span>
+          Habilitados
+        </button>
+        <button class="filter-chip"
+                [class.active]="mostrarSoloDeshabilitados"
+                (click)="setFiltro(true)">
+          <span class="material-icons-sharp">block</span>
+          Deshabilitados
+        </button>
+
+      </div>
+      <div class="toolbar-right">
+        <span style="font-size:0.78rem;color:var(--text-muted)">
+          {{ departamentos.length }} resultado(s)
+        </span>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div class="table-wrapper">
       <table>
         <thead>
           <tr>
+            <th>Departamento</th>
             <th>Código</th>
-            <th>Nombre</th>
-            <th>Jefe de Dep.</th>
-            <th>Acciones</th>
+            <th>Jefe asignado</th>
+            <th>Estado</th>
+            <th style="width:120px;text-align:right">Acciones</th>
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let departamento of departamentos; index as i">
-            <td>{{ departamento.code }}</td>
-            <td>{{ departamento.name }}</td>
-            <td>{{ departamento.head?.fullName || 'Sin Asignar' }}</td>
-            <td class="actions">
-              <button class="btn-icon view" title="Ver" (click)="abrirDetalles(departamento)">
-                <span class="material-icons-sharp">visibility</span>
-              </button>
-              <button class="btn-icon edit" title="Editar" (click)="abrirFormulario('Editar', departamento)">
-                <span class="material-icons-sharp">edit</span>
-              </button>
-              <button class="btn-icon delete" title="Eliminar" (click)="abrirConfirmacion(departamento)">
-                <span class="material-icons-sharp">person_remove</span>
-              </button>
+          <tr *ngFor="let dep of departamentos">
+
+            <!-- Nombre con descripción -->
+            <td class="primary-col">
+              <div style="display:flex;flex-direction:column;gap:2px">
+                <span>{{ dep.name }}</span>
+                <span style="font-size:0.72rem;color:var(--text-muted);font-weight:400">
+                  {{ dep.description || 'Sin descripción' }}
+                </span>
+              </div>
             </td>
+
+            <!-- Código -->
+            <td>
+              <span class="badge badge-accent">{{ dep.code }}</span>
+            </td>
+
+            <!-- Jefe -->
+            <td>
+              <div class="cell-user" *ngIf="dep.head; else noHead">
+                <div class="cell-avatar">{{ getInitials(dep.head.fullName) }}</div>
+                <div>
+                  <div class="cell-name">{{ dep.head.fullName }}</div>
+                  <div class="cell-sub">{{ dep.head.positionName }}</div>
+                </div>
+              </div>
+              <ng-template #noHead>
+                <span style="font-size:0.8rem;color:var(--text-muted)">Sin asignar</span>
+              </ng-template>
+            </td>
+
+            <!-- Estado -->
+            <td>
+              <span class="badge" [class]="dep.enabled ? 'badge-success' : 'badge-danger'">
+                <span class="status-dot" [class]="dep.enabled ? 'active' : 'inactive'"></span>
+                {{ dep.enabled ? 'Habilitado' : 'Deshabilitado' }}
+              </span>
+            </td>
+
+            <!-- Acciones -->
+            <td>
+              <div class="actions-cell" style="justify-content:flex-end">
+                <button class="action-btn view" title="Ver detalles" (click)="abrirDetalles(dep)">
+                  <span class="material-icons-sharp">visibility</span>
+                </button>
+                <button class="action-btn edit" title="Editar" (click)="abrirFormulario('Editar', dep)">
+                  <span class="material-icons-sharp">edit</span>
+                </button>
+                <button class="action-btn delete" title="Deshabilitar" (click)="abrirConfirmacion(dep)">
+                  <span class="material-icons-sharp">block</span>
+                </button>
+              </div>
+            </td>
+
           </tr>
         </tbody>
       </table>
-    </div>
-  </section>
 
-  <!-- Modal Formulario -->
-  <div class="modal" *ngIf="showFormModal">
-    <div class="modal-content">
-      <h2>{{ formMode }} Departamento</h2>
-      <form (submit)="handleGuardar($event)">
-        <label>Código:</label>
-        <input
-          type="text"
-          name="codigo"
-          [value]="selectedDepartamento?.code || ''"
-          required
-        />
-        <label>Nombre:</label>
-        <input
-          type="text"
-          name="nombre"
-          [value]="selectedDepartamento?.name || ''"
-          required
-        />
-        <label>Descripción:</label>
-        <textarea
-          name="descripcion"
-          [value]="selectedDepartamento?.description || ''"
-          rows="3"
-        ></textarea>
-        <div class="modal-actions">
-          <button type="submit" class="btn-primary">Guardar</button>
-          <button type="button" class="btn-secondary" (click)="cerrarModal()">Cancelar</button>
+      <!-- Empty state -->
+      <div class="empty-state" *ngIf="departamentos.length === 0">
+        <div class="empty-icon">
+          <span class="material-icons-sharp">apartment</span>
+        </div>
+        <span class="empty-title">Sin resultados</span>
+        <span class="empty-desc">
+          No hay departamentos que coincidan con tu búsqueda o filtro actual.
+        </span>
+        <button class="btn btn-ghost btn-sm" (click)="limpiarFiltros()">Limpiar filtros</button>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="table-footer">
+      <span class="table-count">
+        Mostrando {{ departamentos.length }} de {{ allDepartamentos.length }} departamentos
+      </span>
+    </div>
+
+  </div>
+
+  <!-- Skeleton loading -->
+  <div class="data-section" *ngIf="loading">
+    <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;gap:10px">
+      <div class="skeleton" style="width:200px;height:36px;border-radius:8px"></div>
+      <div class="skeleton" style="width:90px;height:30px;border-radius:99px"></div>
+      <div class="skeleton" style="width:90px;height:30px;border-radius:99px"></div>
+    </div>
+    <div style="padding:8px 0">
+      <div *ngFor="let i of [0,1,2,3,4,5]" style="display:flex;align-items:center;gap:16px;padding:14px 20px;border-bottom:1px solid var(--border)">
+        <div class="skeleton" style="width:32%;height:14px;border-radius:4px"></div>
+        <div class="skeleton" style="width:12%;height:22px;border-radius:99px"></div>
+        <div class="skeleton" style="width:24%;height:14px;border-radius:4px"></div>
+        <div class="skeleton" style="width:10%;height:22px;border-radius:99px"></div>
+        <div class="skeleton" style="width:8%;height:14px;border-radius:4px;margin-left:auto"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ================================================================
+     SIDE PANEL — Formulario Agregar / Editar
+     ================================================================ -->
+<ng-container *ngIf="showFormModal">
+  <div class="side-panel-backdrop" (click)="cerrarModal()"></div>
+
+  <div class="side-panel">
+    <div class="side-panel-header">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div class="modal-icon" [class.danger-icon]="formMode === 'Editar'">
+          <span class="material-icons-sharp">{{ formMode === 'Agregar' ? 'add_business' : 'edit' }}</span>
+        </div>
+        <div>
+          <div class="modal-title">{{ formMode }} departamento</div>
+          <div class="modal-subtitle">
+            {{ formMode === 'Agregar' ? 'Completa los datos del nuevo departamento' : 'Modifica los campos necesarios' }}
+          </div>
+        </div>
+      </div>
+      <button class="modal-close" (click)="cerrarModal()">
+        <span class="material-icons-sharp">close</span>
+      </button>
+    </div>
+
+    <div class="side-panel-body">
+      <form (submit)="handleGuardar($event)" id="dept-form">
+        <div class="form-grid">
+
+          <div class="form-section-title">Información básica</div>
+
+          <div class="form-group">
+            <label class="form-label">Código</label>
+            <input class="form-control" type="text" name="codigo"
+                   [value]="selectedDepartamento?.code || ''"
+                   placeholder="Ej: DEP-01" required />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Nombre</label>
+            <input class="form-control" type="text" name="nombre"
+                   [value]="selectedDepartamento?.name || ''"
+                   placeholder="Ej: Tecnología" required />
+          </div>
+
+          <div class="form-group span-2">
+            <label class="form-label">Descripción</label>
+            <textarea class="form-control" name="descripcion"
+                      [value]="selectedDepartamento?.description || ''"
+                      placeholder="Descripción breve del departamento..."
+                      rows="3"></textarea>
+          </div>
+
         </div>
       </form>
     </div>
-  </div>
 
-  <!-- Modal Confirmación -->
-  <div class="modal" *ngIf="showConfirmModal">
-    <div class="modal-content">
-      <h2>¿Confirmar deshabilitación?</h2>
-      <p>Esta acción se puede deshacer.</p>
-      <div class="modal-actions">
-        <button class="btn-danger" (click)="handleEliminar()">Deshabilitar</button>
-        <button class="btn-secondary" (click)="cerrarModal()">Cancelar</button>
-      </div>
+    <div class="side-panel-footer">
+      <button class="btn btn-ghost" type="button" (click)="cerrarModal()">Cancelar</button>
+      <button class="btn btn-primary" type="submit" form="dept-form">
+        <span class="material-icons-sharp" style="font-size:17px">save</span>
+        Guardar cambios
+      </button>
     </div>
   </div>
+</ng-container>
 
-  <!-- Modal Detalles -->
-  <div class="modal" *ngIf="showDetailsModal">
-    <div class="modal-content">
-      <h2>Detalles del Departamento</h2>
-      <p><strong>Código:</strong> {{ selectedDepartamento?.code }}</p>
-      <p><strong>Nombre:</strong> {{ selectedDepartamento?.name }}</p>
-      <p><strong>Descripción:</strong> {{ selectedDepartamento?.description }}</p>
-      <div class="modal-actions">
-        <button class="btn-secondary" (click)="cerrarModal()">Cerrar</button>
+<!-- ================================================================
+     MODAL — Confirmar deshabilitación
+     ================================================================ -->
+<div class="modal-backdrop" *ngIf="showConfirmModal" (click)="cerrarModal()">
+  <div class="modal-box modal-sm" (click)="$event.stopPropagation()">
+
+    <div class="confirm-body">
+      <div class="confirm-icon-wrap">
+        <span class="material-icons-sharp">block</span>
+      </div>
+      <span class="confirm-title">¿Deshabilitar departamento?</span>
+      <span class="confirm-desc">
+        El departamento <strong style="color:var(--text-primary)">{{ selectedDepartamento?.name }}</strong>
+        quedará deshabilitado. Esta acción es reversible.
+      </span>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-ghost" (click)="cerrarModal()">Cancelar</button>
+      <button class="btn btn-danger-ghost" (click)="handleEliminar()">
+        <span class="material-icons-sharp" style="font-size:17px">block</span>
+        Deshabilitar
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ================================================================
+     MODAL — Detalles
+     ================================================================ -->
+<div class="modal-backdrop" *ngIf="showDetailsModal" (click)="cerrarModal()">
+  <div class="modal-box" (click)="$event.stopPropagation()">
+
+    <div class="modal-header">
+      <div class="modal-title-group">
+        <div class="modal-icon">
+          <span class="material-icons-sharp">apartment</span>
+        </div>
+        <div>
+          <div class="modal-title">{{ selectedDepartamento?.name }}</div>
+          <div class="modal-subtitle">Detalles del departamento</div>
+        </div>
+      </div>
+      <button class="modal-close" (click)="cerrarModal()">
+        <span class="material-icons-sharp">close</span>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <div class="detail-grid">
+        <div class="detail-item">
+          <span class="detail-label">Código</span>
+          <span class="detail-value">{{ selectedDepartamento?.code }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Estado</span>
+          <span class="detail-value">
+            <span class="badge" [class]="selectedDepartamento?.enabled ? 'badge-success' : 'badge-danger'">
+              {{ selectedDepartamento?.enabled ? 'Habilitado' : 'Deshabilitado' }}
+            </span>
+          </span>
+        </div>
+        <div class="detail-item span-2">
+          <span class="detail-label">Nombre</span>
+          <span class="detail-value">{{ selectedDepartamento?.name }}</span>
+        </div>
+        <div class="detail-item span-2">
+          <span class="detail-label">Descripción</span>
+          <span class="detail-value">{{ selectedDepartamento?.description || '—' }}</span>
+        </div>
+        <div class="detail-item span-2" *ngIf="selectedDepartamento?.head">
+          <span class="detail-label">Jefe de departamento</span>
+          <div style="display:flex;align-items:center;gap:10px;margin-top:4px">
+            <div class="cell-avatar">{{ getInitials(selectedDepartamento?.head?.fullName || '') }}</div>
+            <div>
+              <div style="font-weight:600;color:var(--text-primary);font-size:0.875rem">
+                {{ selectedDepartamento?.head?.fullName }}
+              </div>
+              <div style="font-size:0.75rem;color:var(--text-muted)">
+                {{ selectedDepartamento?.head?.email }}
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-ghost" (click)="cerrarModal()">Cerrar</button>
+      <button class="btn btn-primary" (click)="abrirFormulario('Editar', selectedDepartamento!); showDetailsModal=false">
+        <span class="material-icons-sharp" style="font-size:17px">edit</span>
+        Editar
+      </button>
+    </div>
+
   </div>
 </div>

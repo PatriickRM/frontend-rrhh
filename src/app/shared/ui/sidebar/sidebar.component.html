@@ -1,73 +1,221 @@
-<aside>
-  <div class="toggle">
-    <div class="logo">
-      <img src="/plus.png" alt="Logo" />
-      <h2>RRHH Sistema</h2>
+<!-- ============================================================
+     Sidebar Component — RRHH Sistema Redesign
+     ============================================================ -->
+<aside [class.collapsed]="isCollapsed" [class.mobile-open]="isMobileOpen">
+
+  <!-- ── Header / Logo ──────────────────────────────────── -->
+  <div class="sidebar-header">
+    <div class="logo-mark">
+      <span>RH</span>
     </div>
-    <span class="material-icons-sharp close" id="close-btn">close</span>
+    <div class="logo-text">
+      <span class="logo-name">RRHH Sistema</span>
+      <span class="logo-tagline">GESTIÓN DE TALENTO</span>
+    </div>
   </div>
 
-  <div class="sidebar">
+  <!-- ── Collapse toggle ──────────────────────────────────── -->
+  <button class="collapse-btn" (click)="toggleCollapse()" [attr.aria-label]="isCollapsed ? 'Expandir sidebar' : 'Colapsar sidebar'">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="15 18 9 12 15 6"></polyline>
+    </svg>
+  </button>
 
-    @if (auth.getUser()?.rol === 'ROLE_CHRO') {
-      <a routerLink="/dashboard" routerLinkActive="active"> 
-        <span class="material-icons-sharp">dashboard</span>
-        <h3>Dashboard</h3>
-      </a>
-      <a routerLink="/employees" routerLinkActive="active">
-        <span class="material-icons-sharp">groups</span>
-        <h3>Empleados</h3>
-      </a>
-      <a routerLink="/positions" routerLinkActive="active">
-        <span class="material-icons-sharp">work</span>
-        <h3>Puestos</h3>
-      </a>
-      <a routerLink="/departments" routerLinkActive="active">
-        <span class="material-icons-sharp">apartment</span>
-        <h3>Departamentos</h3>
-      </a>
-      <a routerLink="/leaveC" routerLinkActive="active">
-        <span class="material-icons-sharp">assignment</span>
-        <h3>Solicitudes</h3>
-      </a>
-      <a routerLink="/reports/positions-disabled" routerLinkActive="active">
-        <span class="material-icons-sharp">bar_chart</span>
-        <h3>Reports</h3>
-      </a>
-      <a routerLink="/reports/employees-by-date" routerLinkActive="active">
-        <span class="material-icons-sharp">date_range</span>
-        <h3>Reporte 2: Empleados por fechas</h3>
-      </a>
-      <a routerLink="/users" routerLinkActive="active">
-        <span class="material-icons-sharp">settings</span>
-        <h3>Configuracion</h3>
-      </a>
-      }
+  <!-- ── Navigation ───────────────────────────────────────── -->
+  <nav>
 
-      @if (auth.getUser()?.rol === 'ROLE_HEAD') {
-        <a routerLink="/employee/dashboard" routerLinkActive="active">
-          <span class="material-icons-sharp">person</span>
-          <h3>Mi Perfil</h3>
-        </a>
-        <a routerLink="/leaveH" routerLinkActive="active">
-          <span class="material-icons-sharp">assignment</span>
-          <h3>Solicitudes</h3>
-        </a>
-      }
+    <!-- CHRO routes -->
+    @if (userRole === 'ROLE_CHRO') {
 
-      @if (auth.getUser()?.rol === 'ROLE_EMPLOYEE') {
-        <a routerLink="/employee/dashboard" routerLinkActive="active">
-          <span class="material-icons-sharp">person</span>
-          <h3>Mi Perfil</h3>
+      <div class="nav-section">
+        <div class="nav-section-label">Principal</div>
+
+        <a class="nav-link"
+           routerLink="/dashboard"
+           routerLinkActive="active"
+           data-tooltip="Dashboard"
+           (click)="closeMobile()">
+          <span class="nav-icon">
+            <span class="material-icons-sharp">dashboard</span>
+          </span>
+          <span class="nav-label">Dashboard</span>
         </a>
-        <a routerLink="/leaveE" routerLinkActive="active">
-          <span class="material-icons-sharp">event_available</span>
-          <h3>Gestion de Permisos</h3>
+
+        <a class="nav-link"
+           routerLink="/employees"
+           routerLinkActive="active"
+           data-tooltip="Empleados"
+           (click)="closeMobile()">
+          <span class="nav-icon">
+            <span class="material-icons-sharp">groups</span>
+          </span>
+          <span class="nav-label">Empleados</span>
         </a>
-      }
-    <a href="#" (click)="handleLogout($event)">
-      <span class="material-icons-sharp">logout</span>
-      <h3>Salir</h3>
-    </a>
+
+        <a class="nav-link"
+           routerLink="/departments"
+           routerLinkActive="active"
+           data-tooltip="Departamentos"
+           (click)="closeMobile()">
+          <span class="nav-icon">
+            <span class="material-icons-sharp">apartment</span>
+          </span>
+          <span class="nav-label">Departamentos</span>
+        </a>
+
+        <a class="nav-link"
+           routerLink="/positions"
+           routerLinkActive="active"
+           data-tooltip="Puestos"
+           (click)="closeMobile()">
+          <span class="nav-icon">
+            <span class="material-icons-sharp">work_outline</span>
+          </span>
+          <span class="nav-label">Puestos</span>
+        </a>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-section-label">Permisos</div>
+
+        <a class="nav-link"
+           routerLink="/leaveC"
+           routerLinkActive="active"
+           data-tooltip="Solicitudes"
+           (click)="closeMobile()">
+          <span class="nav-icon">
+            <span class="material-icons-sharp">assignment</span>
+          </span>
+          <span class="nav-label">Solicitudes</span>
+          @if (pendingCount > 0) {
+            <span class="nav-badge">{{ pendingCount }}</span>
+          }
+        </a>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-section-label">Reportes</div>
+
+        <a class="nav-link"
+           routerLink="/reports/positions-disabled"
+           routerLinkActive="active"
+           data-tooltip="Posiciones"
+           (click)="closeMobile()">
+          <span class="nav-icon">
+            <span class="material-icons-sharp">bar_chart</span>
+          </span>
+          <span class="nav-label">Posiciones</span>
+        </a>
+
+        <a class="nav-link"
+           routerLink="/reports/employees-by-date"
+           routerLinkActive="active"
+           data-tooltip="Empleados"
+           (click)="closeMobile()">
+          <span class="nav-icon">
+            <span class="material-icons-sharp">date_range</span>
+          </span>
+          <span class="nav-label">Empleados</span>
+        </a>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-section-label">Sistema</div>
+
+        <a class="nav-link"
+           routerLink="/users"
+           routerLinkActive="active"
+           data-tooltip="Usuarios"
+           (click)="closeMobile()">
+          <span class="nav-icon">
+            <span class="material-icons-sharp">manage_accounts</span>
+          </span>
+          <span class="nav-label">Usuarios</span>
+        </a>
+      </div>
+    }
+
+    <!-- HEAD routes -->
+    @if (userRole === 'ROLE_HEAD') {
+
+      <div class="nav-section">
+        <div class="nav-section-label">Mi espacio</div>
+
+        <a class="nav-link"
+           routerLink="/employee/dashboard"
+           routerLinkActive="active"
+           data-tooltip="Mi perfil"
+           (click)="closeMobile()">
+          <span class="nav-icon">
+            <span class="material-icons-sharp">person</span>
+          </span>
+          <span class="nav-label">Mi perfil</span>
+        </a>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-section-label">Equipo</div>
+
+        <a class="nav-link"
+           routerLink="/leaveH"
+           routerLinkActive="active"
+           data-tooltip="Solicitudes"
+           (click)="closeMobile()">
+          <span class="nav-icon">
+            <span class="material-icons-sharp">assignment</span>
+          </span>
+          <span class="nav-label">Solicitudes</span>
+          @if (pendingCount > 0) {
+            <span class="nav-badge">{{ pendingCount }}</span>
+          }
+        </a>
+      </div>
+    }
+
+    <!-- EMPLOYEE routes -->
+    @if (userRole === 'ROLE_EMPLOYEE') {
+
+      <div class="nav-section">
+        <div class="nav-section-label">Mi espacio</div>
+
+        <a class="nav-link"
+           routerLink="/employee/dashboard"
+           routerLinkActive="active"
+           data-tooltip="Mi perfil"
+           (click)="closeMobile()">
+          <span class="nav-icon">
+            <span class="material-icons-sharp">person</span>
+          </span>
+          <span class="nav-label">Mi perfil</span>
+        </a>
+
+        <a class="nav-link"
+           routerLink="/leaveE"
+           routerLinkActive="active"
+           data-tooltip="Mis permisos"
+           (click)="closeMobile()">
+          <span class="nav-icon">
+            <span class="material-icons-sharp">event_available</span>
+          </span>
+          <span class="nav-label">Mis permisos</span>
+        </a>
+      </div>
+    }
+
+  </nav>
+
+  <!-- ── Footer / User ──────────────────────────────────── -->
+  <div class="sidebar-footer">
+    <div class="user-card">
+      <div class="user-avatar">{{ userInitials }}</div>
+      <div class="user-info">
+        <div class="user-name">{{ userName }}</div>
+        <div class="user-role">{{ roleLabel }}</div>
+      </div>
+      <button class="logout-btn" (click)="handleLogout($event)" title="Cerrar sesión">
+        <span class="material-icons-sharp">logout</span>
+      </button>
+    </div>
   </div>
+
 </aside>

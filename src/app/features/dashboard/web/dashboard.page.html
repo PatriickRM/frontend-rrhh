@@ -1,27 +1,158 @@
-<h1>Dashboard</h1>
+<!-- ============================================================
+     Dashboard Page — RRHH Sistema Redesign
+     ============================================================ -->
 
-<div *ngIf="loading()">
-  <p>Cargando información...</p>
+<!-- ── Loading state ──────────────────────────────────────── -->
+<div *ngIf="loading()" class="kpi-grid">
+  <div class="skeleton-card" *ngFor="let i of [0,1,2,3]">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start">
+      <div class="skeleton skel-line" style="width:42px;height:42px;border-radius:10px"></div>
+      <div class="skeleton skel-line" style="width:56px;height:22px"></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <div class="skeleton skel-line" style="width:60%;height:12px"></div>
+      <div class="skeleton skel-line" style="width:40%;height:28px"></div>
+    </div>
+  </div>
 </div>
 
-<div *ngIf="error()">
-  <p class="error">{{ error() }}</p>
+<!-- ── Error ───────────────────────────────────────────────── -->
+<div *ngIf="error() && !loading()" class="error-banner">
+  <span class="material-icons-sharp">error_outline</span>
+  <span>{{ error() }}</span>
+  <button class="btn btn-ghost btn-sm" (click)="retry()" style="margin-left:auto">Reintentar</button>
 </div>
 
-<div class="analyse" *ngIf="!loading() && !error()">
-  <ng-container *ngIf="hasCards(); else noCards">
-    <div class="card" *ngFor="let card of cards(); trackBy: trackByTitle">
-      <div class="status">
-        <div class="info">
-          <h3>{{ card.title }}</h3>
-          <h1>{{ card.value }}</h1>
+<!-- ── Content ────────────────────────────────────────────── -->
+<div *ngIf="!loading() && !error()">
+
+  <!-- Page header -->
+  <div class="page-header">
+    <div class="greeting">
+      <span class="greeting-label">Bienvenido de vuelta</span>
+      <span class="greeting-name">{{ userName }}</span>
+      <span class="greeting-date">{{ today }}</span>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-ghost">
+        <span class="material-icons-sharp" style="font-size:17px">download</span>
+        Exportar
+      </button>
+      <button class="btn btn-primary">
+        <span class="material-icons-sharp" style="font-size:17px">add</span>
+        Nueva acción
+      </button>
+    </div>
+  </div>
+
+  <!-- KPI Cards -->
+  <div class="kpi-grid">
+    <div class="kpi-card" *ngFor="let card of cards(); trackBy: trackByTitle">
+
+      <div class="kpi-top">
+        <div class="kpi-icon" [class]="getIconColor(card.icon)">
+          <span class="material-icons-sharp">{{ card.icon }}</span>
         </div>
-        <span class="material-icons-sharp card-icon">{{ card.icon }}</span>
+        <div class="kpi-trend" [class]="getTrendClass(card)">
+          <span class="material-icons-sharp">{{ getTrendIcon(card) }}</span>
+          {{ getTrendLabel(card) }}
+        </div>
+      </div>
+
+      <div class="kpi-bottom">
+        <span class="kpi-label">{{ card.title }}</span>
+        <span class="kpi-value">{{ card.value }}</span>
+        <span class="kpi-sub">{{ getCardSub(card) }}</span>
+        <div class="kpi-bar">
+          <div class="kpi-bar-fill" [class]="getIconColor(card.icon)"
+               [style.width]="getBarWidth(card)">
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── Sections grid (solo CHRO) ────────────────────────── -->
+  <div class="sections-grid" *ngIf="isCHRO">
+
+    <!-- Solicitudes recientes -->
+    <div class="section-card">
+      <div class="section-header">
+        <span class="section-title">Solicitudes recientes</span>
+        <button class="section-action" routerLink="/leaveC">Ver todas →</button>
+      </div>
+      <div class="request-list">
+        <div class="request-row" *ngFor="let req of recentRequests">
+          <div class="request-avatar">{{ getInitials(req.employeeName) }}</div>
+          <div class="request-info">
+            <div class="request-name">{{ req.employeeName }}</div>
+            <div class="request-type">{{ getTypeLabel(req.type) }} · {{ req.employeeDepartment }}</div>
+          </div>
+          <div class="request-meta">
+            <span class="badge" [class]="getStatusBadge(req.status)">{{ getStatusLabel(req.status) }}</span>
+            <span class="request-date">{{ formatDate(req.requestDate) }}</span>
+          </div>
+        </div>
+
+        <!-- Empty state -->
+        <div *ngIf="recentRequests.length === 0"
+             style="padding:32px;text-align:center;color:var(--text-muted);font-size:0.875rem">
+          No hay solicitudes recientes
+        </div>
       </div>
     </div>
-  </ng-container>
 
-  <ng-template #noCards>
-    <p>No hay tarjetas disponibles.</p>
-  </ng-template>
+    <!-- Panel de distribución -->
+    <div class="section-card">
+      <div class="section-header">
+        <span class="section-title">Estado del sistema</span>
+      </div>
+      <div class="stats-panel">
+
+        <div class="stat-row">
+          <div class="stat-header">
+            <span class="stat-name">Aprobadas</span>
+            <span class="stat-value" style="color:var(--success)">{{ approvedPct }}%</span>
+          </div>
+          <div class="stat-progress">
+            <div class="stat-fill" [style.width]="approvedPct + '%'" style="background:var(--success)"></div>
+          </div>
+        </div>
+
+        <div class="stat-row">
+          <div class="stat-header">
+            <span class="stat-name">Pendientes</span>
+            <span class="stat-value" style="color:var(--warning)">{{ pendingPct }}%</span>
+          </div>
+          <div class="stat-progress">
+            <div class="stat-fill" [style.width]="pendingPct + '%'" style="background:var(--warning)"></div>
+          </div>
+        </div>
+
+        <div class="stat-row">
+          <div class="stat-header">
+            <span class="stat-name">Rechazadas</span>
+            <span class="stat-value" style="color:var(--danger)">{{ rejectedPct }}%</span>
+          </div>
+          <div class="stat-progress">
+            <div class="stat-fill" [style.width]="rejectedPct + '%'" style="background:var(--danger)"></div>
+          </div>
+        </div>
+
+        <div class="stat-row">
+          <div class="stat-header">
+            <span class="stat-name">Empleados activos</span>
+            <span class="stat-value">{{ activeEmployeesPct }}%</span>
+          </div>
+          <div class="stat-progress">
+            <div class="stat-fill" [style.width]="activeEmployeesPct + '%'" style="background:var(--accent)"></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
 </div>

@@ -1,37 +1,59 @@
-<div class="container">
-  <app-sidebar></app-sidebar>
+<!-- ============================================================
+     Layout Component — RRHH Sistema Redesign
+     ============================================================ -->
 
-  <div class="main-content">
-    <div class="top">
-      <div class="nav">
-        <!-- Botón abrir sidebar (solo móviles) -->
-        <button id="menu-btn">
-          <span class="material-icons-sharp">menu</span>
+<!-- Overlay móvil -->
+<div class="mobile-overlay"
+     [class.visible]="sidebar.isMobileOpen"
+     (click)="sidebar.closeMobile()">
+</div>
+
+<div class="app-shell">
+
+  <!-- ── Sidebar ──────────────────────────────────────────── -->
+  <app-sidebar #sidebar></app-sidebar>
+
+  <!-- ── Main area ────────────────────────────────────────── -->
+  <div class="main-area">
+
+    <!-- Topbar -->
+    <header class="topbar">
+
+      <!-- Mobile hamburger -->
+      <button class="mobile-menu-btn" (click)="sidebar.openMobile()" aria-label="Abrir menú">
+        <span class="material-icons-sharp">menu</span>
+      </button>
+
+      <div class="topbar-left">
+        <span class="page-title">{{ pageTitle }}</span>
+      </div>
+
+      <div class="topbar-right">
+
+        <!-- Dark mode toggle -->
+        <button class="icon-btn" (click)="toggleDarkMode()" title="Alternar tema">
+          <span class="material-icons-sharp">{{ isDark ? 'light_mode' : 'dark_mode' }}</span>
         </button>
 
-        <div class="dark-mode" (click)="toggleDarkMode()">
-          <span class="material-icons-sharp active">light_mode</span>
-          <span class="material-icons-sharp">dark_mode</span>
+        <!-- Notification bell -->
+        <button class="icon-btn notif-btn" title="Notificaciones">
+          <span class="material-icons-sharp">notifications</span>
+          <span class="notif-dot"></span>
+        </button>
+
+        <!-- User chip -->
+        <div class="user-chip">
+          <div class="chip-avatar">{{ userInitials }}</div>
+          <span class="chip-name">{{ userName }}</span>
         </div>
 
-        <div class="profile">
-          <div class="info">
-             <p>Bienvenido, <b>{{ auth.getUser()?.usuario || 'Invitado' }}</b></p>
-            <small class="text-muted">{{ auth.getUser()?.rol || 'No identificado' }}</small>
-          </div>
-          <div class="profile-photo">
-            <img src="/profile-1.jpg" alt="profile">
-          </div>
-          <div class="profile-dropdown">
-            <a href="#">Mi perfil</a>
-            <a (click)="logout()" href="#">Cerrar Sesión</a>
-          </div>
-        </div>
       </div>
-    </div>
+    </header>
 
-    <main>
+    <!-- Page content -->
+    <main class="page-content">
       <router-outlet></router-outlet>
     </main>
+
   </div>
 </div>
